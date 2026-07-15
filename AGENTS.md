@@ -1,22 +1,55 @@
-## Development
+# sumaq-astro-base
 
-When starting the dev server, use background mode:
+Plantilla base para sitios estáticos de Sumaq. No re-scaffoldear: extender sobre esta estructura.
+
+## Desarrollo
+
+Al iniciar el dev server, usar modo background:
 
 ```
 astro dev --background
 ```
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+Gestionar con `astro dev stop`, `astro dev status` y `astro dev logs`.
 
-## Documentation
+## Despliegue
 
-Full documentation: https://docs.astro.build
+Sitio estático en Cloudflare (assets en `./dist/`). Sin adaptador SSR.
 
-Consult these guides before working on related tasks:
+```bash
+SITE_URL=https://dominio.com pnpm deploy
+```
 
-- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
-- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
-- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
-- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
-- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+`SITE_URL` alimenta sitemap y `robots.txt`. Configurar en `.env` local y en CI/CD.
+
+## Estructura esperada
+
+| Ruta | Uso |
+| --- | --- |
+| `src/pages/` | Rutas Astro |
+| `src/components/` | Componentes por bloque de página |
+| `src/layouts/` | Layouts compartidos |
+| `src/data/` | JSON editable por CMS |
+| `cms/` | Esquemas YAML del módulo PagesCMS |
+| `public/` | Assets estáticos, `_headers`, favicons |
+
+## Flujo con sumaq-site-builder
+
+Cuando un sitio estático generado debe volverse editable:
+
+1. Partir de esta plantilla (ya configurada).
+2. Usar el skill `sumaq-site-builder` para generar componentes, `src/data/*.json` y `cms/*.yaml`.
+3. No regenerar `package.json`, `astro.config.mjs` ni `wrangler.jsonc` salvo que el proyecto lo requiera.
+
+## Documentación Astro
+
+https://docs.astro.build
+
+Guías relevantes:
+
+- [Routing](https://docs.astro.build/en/guides/routing/)
+- [Componentes Astro](https://docs.astro.build/en/basics/astro-components/)
+- [Framework components](https://docs.astro.build/en/guides/framework-components/)
+- [Content collections](https://docs.astro.build/en/guides/content-collections/)
+- [Styling / Tailwind](https://docs.astro.build/en/guides/styling/)
+- [i18n](https://docs.astro.build/en/guides/internationalization/)

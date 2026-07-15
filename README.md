@@ -1,43 +1,79 @@
-# Astro Starter Kit: Minimal
+# sumaq-astro-base
 
-```sh
-npm create astro@latest -- --template minimal
+Plantilla base de Astro para sitios estáticos de Sumaq. Incluye SEO (sitemap, robots.txt), fuentes, cache headers y despliegue en Cloudflare.
+
+## Uso como plantilla
+
+```bash
+# Clonar o copiar el repo
+git clone <url> mi-sitio
+cd mi-sitio
+
+# Instalar dependencias
+pnpm install
+
+# Configurar dominio
+cp .env.example .env
+# Editar SITE_URL en .env
+
+# Desarrollo
+pnpm dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Al iniciar un proyecto nuevo, renombra el paquete en `package.json` y el worker en `wrangler.jsonc`.
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
+## Estructura
 
 ```text
 /
-├── public/
+├── cms/                 # Esquemas YAML del CMS (generados por sumaq-site-builder)
+├── public/              # Assets estáticos (_headers, favicons, etc.)
 ├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+│   ├── components/      # Componentes Astro por bloque
+│   ├── data/            # Contenido JSON editable por CMS
+│   ├── layouts/         # Layouts compartidos
+│   └── pages/           # Rutas del sitio
+├── astro.config.mjs
+├── wrangler.jsonc       # Despliegue en Cloudflare (assets estáticos)
+└── .env.example
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Comandos
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+| Comando | Acción |
+| --- | --- |
+| `pnpm dev` | Servidor de desarrollo en `localhost:4321` |
+| `pnpm build` | Build de producción en `./dist/` |
+| `pnpm preview` | Previsualizar el build localmente |
+| `pnpm deploy` | Build + despliegue en Cloudflare |
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Despliegue
 
-## 🧞 Commands
+Sitio estático en **Cloudflare Workers** (static assets). No requiere adaptador SSR.
 
-All commands are run from the root of the project, from a terminal:
+```bash
+SITE_URL=https://tu-dominio.com pnpm deploy
+```
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+En CI/CD (Workers Builds):
 
-## 👀 Want to learn more?
+- **Build command:** `pnpm build`
+- **Deploy command:** `pnpm wrangler deploy`
+- **Variable de entorno:** `SITE_URL`
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## Incluido
+
+- Astro 7 con TypeScript strict
+- Sitemap automático (`@astrojs/sitemap`)
+- `robots.txt` generado desde `SITE_URL`
+- Fuente Inter vía `astro:assets`
+- Cache inmutable para assets hasheados (`public/_headers`)
+
+## Flujo Sumaq
+
+Esta plantilla es el punto de partida para [sumaq-site-builder](https://github.com/sumaq): convierte un sitio estático generado en componentes Astro + datos JSON + esquemas CMS. El andamiaje (config, deploy, SEO) ya viene del template; no re-scaffoldear.
+
+## Documentación
+
+- [Astro](https://docs.astro.build)
+- [Despliegue en Cloudflare](https://docs.astro.build/en/guides/deploy/cloudflare/)
