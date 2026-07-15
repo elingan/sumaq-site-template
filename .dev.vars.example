@@ -1,2 +1,0 @@
-# Variables de runtime para wrangler dev / Worker (no commitear .dev.vars)
-BACKEND_URL=

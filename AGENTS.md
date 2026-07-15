@@ -14,18 +14,13 @@ Gestionar con `astro dev stop`, `astro dev status` y `astro dev logs`.
 
 ## Despliegue
 
-Modo híbrido en **Cloudflare Workers**: páginas estáticas + API routes on-demand (`prerender = false`).
+Modo híbrido en **Cloudflare Workers**: páginas estáticas + [Astro Actions](https://docs.astro.build/en/guides/actions/) on-demand.
 
 ```bash
 SITE_URL=https://dominio.com pnpm deploy
 ```
 
-| Variable | Cuándo | Dónde |
-| --- | --- | --- |
-| `SITE_URL` | Build (sitemap, robots.txt) | `.env` / CI |
-| `BACKEND_URL` | Runtime (API routes) | `wrangler.jsonc` vars, `.dev.vars` o dashboard Cloudflare |
-
-Wrangler genera la config de deploy en `dist/server/` tras el build. No sobrescribir `main` ni `assets` en `wrangler.jsonc`.
+`SITE_URL` en `.env` / CI (build time). Las actions viven en `src/actions/index.ts`.
 
 ## Estructura esperada
 

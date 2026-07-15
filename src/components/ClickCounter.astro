@@ -7,19 +7,20 @@
 </section>
 
 <script>
+	import { actions } from 'astro:actions';
+
 	const countEl = document.getElementById('click-count');
 	const btn = document.getElementById('click-btn');
 	const errorEl = document.getElementById('click-error');
 
-	async function loadCount() {
-		const response = await fetch('/api/clicks');
-		if (!response.ok) {
-			throw new Error('load failed');
+	const { data, error } = await actions.getClicks();
+	if (error) {
+		if (errorEl) {
+			errorEl.textContent = 'No se pudo cargar el contador.';
+			errorEl.hidden = false;
 		}
-		const data = (await response.json()) as { clicks: number };
-		if (countEl) {
-			countEl.textContent = String(data.clicks);
-		}
+	} else if (countEl) {
+		countEl.textContent = String(data.clicks);
 	}
 
 	btn?.addEventListener('click', async () => {
@@ -33,30 +34,17 @@
 			errorEl.textContent = '';
 		}
 
-		try {
-			const response = await fetch('/api/clicks', { method: 'POST' });
-			if (!response.ok) {
-				throw new Error('post failed');
-			}
-			const data = (await response.json()) as { clicks: number };
-			if (countEl) {
-				countEl.textContent = String(data.clicks);
-			}
-		} catch {
+		const result = await actions.incrementClick();
+		if (result.error) {
 			if (errorEl) {
 				errorEl.textContent = 'No se pudo registrar el click.';
 				errorEl.hidden = false;
 			}
-		} finally {
-			btn.disabled = false;
+		} else if (countEl) {
+			countEl.textContent = String(result.data.clicks);
 		}
-	});
 
-	loadCount().catch(() => {
-		if (errorEl) {
-			errorEl.textContent = 'No se pudo cargar el contador.';
-			errorEl.hidden = false;
-		}
+		btn.disabled = false;
 	});
 </script>
 

@@ -7,9 +7,5 @@
 	"preview_urls": true,
 	"observability": {
 		"enabled": true
-	},
-	// Runtime: API routes leen BACKEND_URL desde aquí (o .dev.vars en local).
-	"vars": {
-		"BACKEND_URL": ""
 	}
 }
