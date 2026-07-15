@@ -29,6 +29,7 @@ Al iniciar un proyecto nuevo, renombra el paquete en `package.json` y el worker 
 ├── cms/                 # Esquemas YAML del CMS (generados por sumaq-site-builder)
 ├── public/              # Assets estáticos (_headers, favicons, etc.)
 ├── src/
+│   ├── assets/          # Imágenes locales optimizables con <Image />
 │   ├── components/      # Componentes Astro por bloque
 │   ├── data/            # Contenido JSON editable por CMS
 │   ├── layouts/         # Layouts compartidos
@@ -67,7 +68,54 @@ En CI/CD (Workers Builds):
 - Sitemap automático (`@astrojs/sitemap`)
 - `robots.txt` generado desde `SITE_URL`
 - Fuente Inter vía `astro:assets`
+- Optimización de imágenes con `<Image />` (`sharp`) — local y remota
 - Cache inmutable para assets hasheados (`public/_headers`)
+
+## Imágenes
+
+El componente [`<Image />`](https://docs.astro.build/en/guides/images/) de `astro:assets` optimiza imágenes en el build (WebP, dimensiones, lazy loading).
+
+### Local (`src/assets/`)
+
+Importa el archivo y pásalo a `src`:
+
+```astro
+---
+import { Image } from 'astro:assets';
+import heroImage from '../assets/hero.jpg';
+---
+
+<Image src={heroImage} alt="Descripción" width={800} height={450} />
+```
+
+Ver ejemplo en `src/pages/index.astro`.
+
+### Remota (URL pública)
+
+Para optimizar imágenes externas, autoriza el dominio en `astro.config.mjs`:
+
+```js
+export default defineConfig({
+  image: {
+    domains: ['images.unsplash.com'],
+  },
+});
+```
+
+Luego usa la URL completa con `width` y `height` (obligatorios si no usas `inferSize`):
+
+```astro
+<Image
+  src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=450&fit=crop"
+  alt="Paisaje de montaña"
+  width={800}
+  height={450}
+/>
+```
+
+Solo se optimizan dominios listados en `image.domains` o `image.remotePatterns`. Para añadir un CDN o CMS, agrega su hostname a esa configuración.
+
+Documentación: [Imágenes en Astro](https://docs.astro.build/en/guides/images/) · [Dominios remotos](https://docs.astro.build/en/guides/images/#authorizing-remote-images)
 
 ## Flujo Sumaq
 

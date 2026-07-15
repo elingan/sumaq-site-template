@@ -1,5 +1,9 @@
 ---
-import { Font } from 'astro:assets';
+import { Font, Image } from 'astro:assets';
+import heroImage from '../assets/hero.jpg';
+
+const remoteHeroImage =
+	'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=450&fit=crop&auto=format';
 ---
 
 <html lang="en">
@@ -15,11 +19,26 @@ import { Font } from 'astro:assets';
 	</head>
 	<body>
 		<h1>sumaq-astro-base</h1>
+		<Image src={heroImage} alt="Imagen de bienvenida de Sumaq" width={800} height={450} />
+		<Image
+			src={remoteHeroImage}
+			alt="Paisaje de montaña (imagen remota optimizada)"
+			width={800}
+			height={450}
+		/>
 	</body>
 </html>
 
 <style>
 	h1 {
 		font-family: var(--font-inter);
+	}
+
+	img {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		margin-top: 1.5rem;
+		border-radius: 0.5rem;
 	}
 </style>
