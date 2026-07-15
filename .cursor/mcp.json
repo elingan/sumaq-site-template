@@ -3,6 +3,9 @@
     "Astro docs": {
       "type": "http",
       "url": "https://mcp.docs.astro.build/mcp"
+    },
+    "cloudflare-api": {
+      "url": "https://mcp.cloudflare.com/mcp"
     }
   }
 }
