@@ -1,14 +1,15 @@
 {
 	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "sumaq-astro-base",
 	"compatibility_date": "2026-07-14",
 	"compatibility_flags": ["global_fetch_strictly_public"],
-	"name": "sumaq-astro-base",
-	"main": "@astrojs/cloudflare/entrypoints/server",
-	"assets": {
-		"directory": "./dist",
-		"binding": "ASSETS"
-	},
+	"workers_dev": true,
+	"preview_urls": true,
 	"observability": {
 		"enabled": true
+	},
+	// Runtime: API routes leen BACKEND_URL desde aquí (o .dev.vars en local).
+	"vars": {
+		"BACKEND_URL": ""
 	}
 }

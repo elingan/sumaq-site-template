@@ -14,13 +14,18 @@ Gestionar con `astro dev stop`, `astro dev status` y `astro dev logs`.
 
 ## Despliegue
 
-Sitio estático en Cloudflare (assets en `./dist/`). Sin adaptador SSR.
+Modo híbrido en **Cloudflare Workers**: páginas estáticas + API routes on-demand (`prerender = false`).
 
 ```bash
 SITE_URL=https://dominio.com pnpm deploy
 ```
 
-`SITE_URL` alimenta sitemap y `robots.txt`. Configurar en `.env` local y en CI/CD.
+| Variable | Cuándo | Dónde |
+| --- | --- | --- |
+| `SITE_URL` | Build (sitemap, robots.txt) | `.env` / CI |
+| `BACKEND_URL` | Runtime (API routes) | `wrangler.jsonc` vars, `.dev.vars` o dashboard Cloudflare |
+
+Wrangler genera la config de deploy en `dist/server/` tras el build. No sobrescribir `main` ni `assets` en `wrangler.jsonc`.
 
 ## Estructura esperada
 
