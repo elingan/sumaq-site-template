@@ -2,10 +2,9 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "sumaq-astro-base",
 	"compatibility_date": "2026-07-14",
-	"compatibility_flags": ["global_fetch_strictly_public"],
 	"workers_dev": true,
 	"preview_urls": true,
-	"observability": {
-		"enabled": true
+	"assets": {
+		"directory": "./dist"
 	}
 }
