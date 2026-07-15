@@ -1,10 +1,14 @@
 {
 	"$schema": "./node_modules/wrangler/config-schema.json",
-	"name": "sumaq-astro-base",
 	"compatibility_date": "2026-07-14",
-	"workers_dev": true,
-	"preview_urls": true,
+	"compatibility_flags": ["global_fetch_strictly_public"],
+	"name": "sumaq-astro-base",
+	"main": "@astrojs/cloudflare/entrypoints/server",
 	"assets": {
-		"directory": "./dist"
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	"observability": {
+		"enabled": true
 	}
 }
