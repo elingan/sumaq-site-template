@@ -1,5 +1,5 @@
 ---
-
+import { Font } from 'astro:assets';
 ---
 
 <html lang="en">
@@ -7,11 +7,19 @@
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Astro</title>
+		<Font cssVariable="--font-inter" preload />
 	</head>
 	<body>
 		<h1>Astro</h1>
 	</body>
 </html>
+
+<style>
+	h1 {
+		font-family: var(--font-inter);
+	}
+</style>
