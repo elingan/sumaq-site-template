@@ -1,0 +1,28 @@
+---
+layout: ../layouts/MdxBase.astro
+title: Sumaq — MDX Demo
+lang: en
+---
+
+import { Icon } from 'astro-icon/components';
+
+<p class="demo__eyebrow">
+	<Icon name="spark" class="icon" />
+	MDX smoke test
+</p>
+
+# MDX works
+
+This page is authored as **MDX**. If you can read this after `pnpm build`, the `@astrojs/mdx` integration is wired correctly.
+
+- Site design uses **plain CSS** (`demo.css` / project CSS)
+- CMS tweaks use the **`sq-*`** whitelist (`cms-utils.css`)
+- The icon above comes from `astro-icon`
+
+<p class="demo-mdx__footer sq-align-left">
+	<a href="/">← Deutsch</a>
+	{' · '}
+	<a href="/en/">English</a>
+</p>
+
+<p class="sq-muted sq-align-center">Example of CMS utility classes: muted + centered.</p>

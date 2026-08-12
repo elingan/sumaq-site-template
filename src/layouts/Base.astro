@@ -1,0 +1,29 @@
+---
+import { Font } from 'astro:assets';
+import '@/styles/global.css';
+import '@/styles/cms-utils.css';
+
+interface Props {
+	title?: string;
+	lang?: string;
+}
+
+const { title = 'Sumaq', lang = 'de' } = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang}>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<Font cssVariable="--font-inter" preload />
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>

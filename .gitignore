@@ -1,9 +1,7 @@
 # build output
 dist/
-.wrangler/
 # generated types
 .astro/
-worker-configuration.d.ts
 
 # dependencies
 node_modules/
@@ -24,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# local pnpm store (should not live in repo)
+.pnpm-store/

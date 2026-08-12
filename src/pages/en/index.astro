@@ -6,13 +6,10 @@ import Base from '@/layouts/Base.astro';
 import heroImage from '@/assets/hero.jpg';
 import '@/styles/demo.css';
 
-const remoteHeroImage =
-	'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=450&fit=crop&auto=format';
-
-const enHome = getRelativeLocaleUrl('en', '');
+const deHome = getRelativeLocaleUrl('de', '');
 ---
 
-<Base title="Sumaq — Vorlage" lang="de">
+<Base title="Sumaq — Template" lang="en">
 	<main class="demo">
 		<p class="demo__eyebrow">
 			<Icon name="spark" class="icon" />
@@ -20,25 +17,19 @@ const enHome = getRelativeLocaleUrl('en', '');
 		</p>
 		<h1 class="demo__title">Sumaq</h1>
 		<p class="demo__lead sq-align-left">
-			Statische Astro-Vorlage mit CSS plain, CMS-Utilities (<span class="sq-strong">sq-*</span>),
-			MDX, Icons, i18n, Sitemap und Dev-Plugins.
+			Static Astro template with plain CSS, CMS utilities (<span class="sq-strong">sq-*</span>),
+			MDX, icons, i18n, sitemap, and Vite dev plugins.
 		</p>
 
 		<nav class="demo__nav">
-			<a href={enHome}>English</a>
+			<a href={deHome}>Deutsch</a>
 			<a href="/demo/">MDX Demo</a>
 		</nav>
 
 		<div class="demo__media">
 			<Image
 				src={heroImage}
-				alt="Willkommensbild von Sumaq"
-				width={800}
-				height={450}
-			/>
-			<Image
-				src={remoteHeroImage}
-				alt="Berglandschaft (entferntes Bild, optimiert)"
+				alt="Sumaq welcome image"
 				width={800}
 				height={450}
 			/>

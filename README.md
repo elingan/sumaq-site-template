@@ -1,77 +1,98 @@
 # sumaq-astro-base
 
-Plantilla base de Astro para sitios estáticos de Sumaq. Incluye SEO (sitemap, robots.txt), fuentes, imágenes optimizadas y cache headers.
+Plantilla base de Astro 7 para sitios **estáticos** de Sumaq. CSS plano por proyecto + utilidades CMS (`sq-*`), MDX, icons, i18n, sitemap, robots.txt y plugins Vite de desarrollo.
 
-## Uso como plantilla
+## Crear un proyecto nuevo
 
 ```bash
-git clone <url> mi-sitio
-cd mi-sitio
-pnpm install
+pnpm create astro@latest -- --template elingan/sumaq-astro-base
+cd <nombre-del-proyecto>
 cp .env.example .env   # editar SITE_URL
+pnpm install
 pnpm dev
 ```
 
-Al iniciar un proyecto nuevo, renombra el paquete en `package.json` y el worker en `wrangler.jsonc`.
-
-## Estructura
-
-```text
-/
-├── cms/                 # Esquemas YAML del CMS (generados por sumaq-site-builder)
-├── public/              # Assets estáticos (_headers, favicons, etc.)
-├── src/
-│   ├── assets/          # Imágenes locales optimizables con <Image />
-│   ├── components/      # Componentes Astro por bloque
-│   ├── data/            # Contenido JSON editable por CMS
-│   ├── layouts/         # Layouts compartidos
-│   └── pages/           # Rutas del sitio
-├── astro.config.mjs
-├── wrangler.jsonc       # Deploy estático en Cloudflare Workers
-└── .env.example
-```
+Renombra el campo `"name"` en `package.json` al crear el sitio.
 
 ## Comandos
 
 | Comando | Acción |
 | --- | --- |
-| `pnpm dev` | Servidor de desarrollo en `localhost:4321` |
-| `pnpm build` | Build de producción en `./dist/` |
-| `pnpm preview` | Build + preview local con Wrangler |
-| `pnpm deploy` | Build + deploy en Cloudflare Workers |
+| `pnpm dev` | Servidor de desarrollo (`--host`, con QR en terminal) |
+| `pnpm build` | Build estático en `./dist/` |
+| `pnpm preview` | Preview local del build (`astro preview`) |
+
+## Configuración incluida
+
+- Astro 7, TypeScript strict, alias `@/*`
+- Output estático (sin adapter)
+- `@astrojs/sitemap` + `src/pages/robots.txt.ts` vía `SITE_URL`
+- CSS plano: `global.css` (reset + tokens) + `cms-utils.css` (`sq-*`)
+- `@astrojs/mdx`
+- `astro-icon` (`src/assets/icons/`)
+- i18n nativo: `de` (default, sin prefijo) y `en` (`/en/`)
+- Fuentes Google vía `astro:assets` (`--font-inter`)
+- Imágenes con `sharp`
+- Dev: `vite-plugin-qrcode` + `vite-plugin-devtools-json`
+- **Sin** Tailwind ni DaisyUI
+
+## Estilos y CMS
+
+| Archivo | Rol |
+| --- | --- |
+| `src/styles/global.css` | Reset ligero y tokens (`--color-*`, `--space-*`) |
+| `src/styles/cms-utils.css` | Whitelist editable por CMS (`sq-align-*`, `sq-strong`, `sq-muted`, …) |
+| CSS del sitio | Diseño del proyecto (p. ej. `site.css`); no utility soup |
+
+El editor CMS solo debe emitir clases `sq-*` documentadas. Ampliar esa lista con criterio; no reintroducir Tailwind.
+
+## Rutas de ejemplo (humo)
+
+| Ruta | Qué verifica |
+| --- | --- |
+| `/` | Home DE, CSS, Font, Image, Icon, i18n, `sq-*` |
+| `/en/` | Locale EN |
+| `/demo/` | MDX + Icon + `sq-*` |
+
+Sustituye estas páginas (y `demo.css`) al construir el sitio real.
+
+## Variables de entorno
+
+```bash
+# .env
+SITE_URL=https://tu-dominio.com
+```
+
+`SITE_URL` alimenta sitemap, robots.txt y URLs canónicas en build.
+
+## Estructura
+
+```text
+/
+├── cms/                 # Esquemas YAML del CMS
+├── public/              # Assets estáticos, favicons
+├── src/
+│   ├── assets/          # Imágenes + icons/
+│   ├── components/
+│   ├── data/
+│   ├── layouts/         # Base.astro, MdxBase.astro
+│   ├── pages/           # Rutas (+ en/ para i18n)
+│   └── styles/          # global.css, cms-utils.css, demo.css
+├── astro.config.mjs
+└── .env.example
+```
 
 ## Despliegue
 
-Sitio estático en **Cloudflare Workers** (static assets). Sin adaptador Astro — solo HTML/CSS/JS en `dist/`.
-
-```bash
-SITE_URL=https://tu-dominio.com pnpm deploy
-```
-
-En **Workers Builds** (GitHub):
-
-| Campo | Valor |
-| --- | --- |
-| Build command | `pnpm install && pnpm build` |
-| Deploy command | `pnpm wrangler deploy` |
-| Variable | `SITE_URL` |
-
-Renombra `"name"` en `wrangler.jsonc` al crear un proyecto nuevo.
-
-## Incluido
-
-- Astro 7 con TypeScript strict
-- Sitemap automático (`@astrojs/sitemap`)
-- `robots.txt` generado desde `SITE_URL`
-- Fuente Inter vía `astro:assets`
-- Optimización de imágenes con `<Image />` (`sharp`)
-- Cache inmutable para assets hasheados (`public/_headers`)
+`pnpm build` genera HTML/CSS/JS en `dist/`. El hosting es externo a esta plantilla: publica el contenido de `dist/`.
 
 ## Flujo Sumaq
 
-Punto de partida para **sumaq-site-builder**: convierte un sitio estático generado en componentes Astro + datos JSON + esquemas CMS. No re-scaffoldear el andamiaje.
+Punto de partida para **sumaq-site-builder**. No re-scaffoldear el andamiaje.
 
 ## Documentación
 
 - [Astro](https://docs.astro.build)
-- [Despliegue](https://docs.astro.build/en/guides/deploy/)
+- [i18n](https://docs.astro.build/en/guides/internationalization/)
+- [Styling](https://docs.astro.build/en/guides/styling/)
+- [MDX](https://docs.astro.build/en/guides/integrations-guide/mdx/)

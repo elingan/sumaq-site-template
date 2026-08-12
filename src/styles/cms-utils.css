@@ -1,0 +1,33 @@
+/*
+ * Vocabulario CMS (whitelist).
+ * Solo estas clases deben emitir el editor; ampliar con criterio, no a lo Tailwind.
+ */
+
+.sq-align-left {
+	text-align: left;
+}
+
+.sq-align-center {
+	text-align: center;
+}
+
+.sq-align-right {
+	text-align: right;
+}
+
+.sq-strong {
+	font-weight: 700;
+}
+
+.sq-em {
+	font-style: italic;
+}
+
+.sq-muted {
+	color: var(--color-muted);
+}
+
+.sq-underline {
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
