@@ -1,0 +1,233 @@
+# Schema de la página de inicio.
+#
+# Contrato entre el editor de la app y `content/index.json`. El build lo valida
+# antes de emitir páginas: si un campo `required` está vacío, el sitio no se
+# publica. Los identificadores (`name`) van en inglés; las etiquetas (`label`),
+# en el idioma de la clienta.
+label: Startseite
+route: /
+group: main
+order: 10
+
+seo:
+  label: SEO
+  fields:
+    - name: lang
+      label: Sprache
+      type: string
+      required: true
+    - name: siteName
+      label: Website-Name
+      type: string
+      required: true
+    - name: title
+      label: Titel
+      type: string
+      required: true
+    - name: description
+      label: Beschreibung
+      type: text
+      required: true
+    - name: ogTitle
+      label: Open-Graph-Titel
+      type: string
+    - name: ogDescription
+      label: Open-Graph-Beschreibung
+      type: text
+    - name: ogImage
+      label: Open-Graph-Bild
+      type: image
+    - name: ogLocale
+      label: Open-Graph-Locale
+      type: string
+
+header:
+  label: Kopfbereich
+  fields:
+    - name: brandName
+      label: Markenname
+      type: string
+      required: true
+    - name: brandTagline
+      label: Marken-Slogan
+      type: string
+    - name: homeLabel
+      label: Startseiten-Bezeichnung
+      type: string
+    - name: homeHref
+      label: Startseiten-Link
+      type: url
+    - name: navLinks
+      label: Navigationslinks
+      type: object
+      required: true
+      list: { display: inline, sortable: true }
+      fields:
+        - name: label
+          label: Bezeichnung
+          type: string
+          required: true
+        - name: href
+          label: Link
+          type: url
+          required: true
+
+footer:
+  label: Fußbereich
+  fields:
+    - name: tagline
+      label: Slogan
+      type: string
+    - name: copyrightPrefix
+      label: Copyright-Präfix
+      type: string
+    - name: copyrightSuffix
+      label: Copyright-Suffix
+      type: string
+    - name: toTopLabel
+      label: "Bezeichnung „Nach oben“"
+      type: string
+    - name: navLinks
+      label: Navigationslinks
+      type: object
+      list: { display: inline, sortable: true }
+      fields:
+        - name: label
+          label: Bezeichnung
+          type: string
+          required: true
+        - name: href
+          label: Link
+          type: url
+          required: true
+    - name: legalLinks
+      label: Rechtliche Links
+      type: object
+      required: true
+      list: { display: inline, sortable: true }
+      fields:
+        - name: label
+          label: Bezeichnung
+          type: string
+          required: true
+        - name: href
+          label: Link
+          type: url
+          required: true
+
+hero:
+  label: Hero
+  fields:
+    - name: eyebrow
+      label: Überzeile
+      type: string
+    - name: title
+      label: Titel
+      type: string
+      required: true
+    - name: titleAccent
+      label: Titel-Akzent
+      type: string
+    - name: sectionSubtitle
+      label: Untertitel
+      type: text
+    - name: image
+      label: Bild
+      type: object
+      fields:
+        - name: src
+          label: Quelle
+          type: image
+        - name: alt
+          label: Alternativtext
+          type: string
+    - name: ctas
+      label: Handlungsaufrufe
+      type: object
+      list: { display: inline, sortable: true }
+      fields:
+        - name: label
+          label: Bezeichnung
+          type: string
+          required: true
+        - name: href
+          label: Link
+          type: url
+          required: true
+        - name: variant
+          label: Variante
+          type: select
+          options:
+            values: [primary, ghost]
+
+services:
+  label: Leistungen
+  fields:
+    - name: sectionLabel
+      label: Abschnitts-Überzeile
+      type: string
+    - name: sectionTitle
+      label: Abschnittstitel
+      type: string
+      required: true
+    - name: sectionTitleAccent
+      label: Titel-Akzent
+      type: string
+    - name: sectionSubtitle
+      label: Abschnitts-Untertitel
+      type: text
+    - name: items
+      label: Leistungspunkte
+      type: object
+      required: true
+      list: { display: inline, sortable: true }
+      fields:
+        - name: title
+          label: Titel
+          type: string
+          required: true
+        - name: body
+          label: Beschreibung
+          type: text
+          required: true
+        - name: icon
+          label: Symbol
+          type: string
+
+contact:
+  label: Kontakt
+  fields:
+    - name: sectionLabel
+      label: Abschnitts-Überzeile
+      type: string
+    - name: sectionTitle
+      label: Abschnittstitel
+      type: string
+      required: true
+    - name: sectionTitleAccent
+      label: Titel-Akzent
+      type: string
+    - name: sectionSubtitle
+      label: Abschnitts-Untertitel
+      type: text
+    - name: cards
+      label: Kontaktkarten
+      type: object
+      required: true
+      list: { display: inline, sortable: true }
+      fields:
+        - name: name
+          label: Name
+          type: string
+          required: true
+        - name: role
+          label: Funktion
+          type: string
+        - name: email
+          label: E-Mail
+          type: string
+          required: true
+        - name: phone
+          label: Telefon
+          type: string
+          required: true

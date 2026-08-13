@@ -1,0 +1,83 @@
+{
+  "seo": {
+    "lang": "de",
+    "siteName": "Praxis Musterfrau",
+    "title": "Praxis Musterfrau – Psychotherapie in Graz",
+    "description": "Psychotherapeutische Begleitung für Erwachsene und Jugendliche. Termine nach Vereinbarung.",
+    "ogTitle": "Praxis Musterfrau – Psychotherapie in Graz",
+    "ogDescription": "Psychotherapeutische Begleitung für Erwachsene und Jugendliche. Termine nach Vereinbarung.",
+    "ogLocale": "de_AT"
+  },
+  "header": {
+    "brandName": "Praxis Musterfrau",
+    "brandTagline": "Psychotherapie | Beratung",
+    "homeLabel": "Praxis Musterfrau – Startseite",
+    "homeHref": "/",
+    "navLinks": [
+      { "label": "Startseite", "href": "/" },
+      { "label": "Leistungen", "href": "/#services" },
+      { "label": "Kontakt", "href": "/#contact" }
+    ]
+  },
+  "footer": {
+    "tagline": "Psychotherapeutische Praxis in Graz.",
+    "copyrightPrefix": "© 2026 Praxis Musterfrau.",
+    "copyrightSuffix": "Alle Rechte vorbehalten.",
+    "toTopLabel": "Nach oben",
+    "navLinks": [
+      { "label": "Startseite", "href": "/" },
+      { "label": "Leistungen", "href": "/#services" }
+    ],
+    "legalLinks": [
+      { "label": "Impressum", "href": "/impressum" },
+      { "label": "Datenschutz", "href": "/datenschutz" }
+    ]
+  },
+  "hero": {
+    "eyebrow": "Psychotherapie in Graz",
+    "title": "Ein Raum für",
+    "titleAccent": "Ihre Anliegen",
+    "sectionSubtitle": "Psychotherapeutische Begleitung für Erwachsene und Jugendliche, in einem geschützten Rahmen und in Ihrem Tempo.",
+    "ctas": [
+      { "label": "Termin anfragen", "href": "#contact", "variant": "primary" },
+      { "label": "Leistungen ansehen", "href": "#services", "variant": "ghost" }
+    ]
+  },
+  "services": {
+    "sectionLabel": "Leistungen",
+    "sectionTitle": "Womit ich Sie",
+    "sectionTitleAccent": "begleiten kann",
+    "sectionSubtitle": "Jede Begleitung beginnt mit einem unverbindlichen Erstgespräch.",
+    "items": [
+      {
+        "title": "Einzeltherapie",
+        "body": "Psychotherapeutische Begleitung für Erwachsene bei Belastungen, Krisen und Lebensübergängen.",
+        "icon": "person"
+      },
+      {
+        "title": "Jugendliche",
+        "body": "Begleitung für Jugendliche ab 14 Jahren, auf Wunsch mit Einbezug der Bezugspersonen.",
+        "icon": "group"
+      },
+      {
+        "title": "Erstgespräch",
+        "body": "Ein unverbindliches Kennenlernen, um zu klären, ob die Zusammenarbeit passt.",
+        "icon": "calendar"
+      }
+    ]
+  },
+  "contact": {
+    "sectionLabel": "Kontakt",
+    "sectionTitle": "Ich freue mich",
+    "sectionTitleAccent": "auf Ihre Anfrage",
+    "sectionSubtitle": "Am einfachsten per E-Mail — ich melde mich innerhalb von zwei Werktagen zurück.",
+    "cards": [
+      {
+        "name": "Maria Musterfrau, MSc",
+        "role": "Psychotherapeutin",
+        "email": "praxis@example.at",
+        "phone": "0660 123 45 67"
+      }
+    ]
+  }
+}

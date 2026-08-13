@@ -1,45 +1,17 @@
 // @ts-check
-import { defineConfig, fontProviders } from 'astro/config';
-import sitemap from '@astrojs/sitemap';
-import mdx from '@astrojs/mdx';
-import icon from 'astro-icon';
+import { defineSumaqSite } from '@sumaq/site-kit/config';
 import devtoolsJson from 'vite-plugin-devtools-json';
 import { qrcode } from 'vite-plugin-qrcode';
 
-const site = process.env.SITE_URL ?? 'https://example.com';
-
-// https://astro.build/config
-export default defineConfig({
-	site,
-	integrations: [
-		sitemap(),
-		mdx(),
-		icon({
-			iconDir: './src/assets/icons',
-		}),
-	],
-	vite: {
-		plugins: [
-			qrcode(),
-			devtoolsJson({ uuid: '6c4c6e45-e5fd-455e-b55f-935829f6593b' }),
-		],
-	},
-	i18n: {
-		defaultLocale: 'de',
-		locales: ['de', 'en'],
-		routing: {
-			prefixDefaultLocale: false,
-		},
-	},
+// El kit aporta: salida estática, sitemap, imágenes responsive y la validación
+// de `content/*.json` contra `cms/*.yaml` en `astro:build:start`. Si el contenido
+// no cumple el schema, el build falla y no se publica nada.
+export default defineSumaqSite({
+	site: process.env.SITE_URL ?? 'https://example.com',
 	image: {
-		remotePatterns: [{ protocol: 'https' }],
-		domains: ['images.unsplash.com'],
+		domains: [],
 	},
-	fonts: [
-		{
-			provider: fontProviders.google(),
-			name: 'Inter',
-			cssVariable: '--font-inter',
-		},
-	],
+	vite: {
+		plugins: [qrcode(), devtoolsJson()],
+	},
 });

@@ -1,47 +1,19 @@
 ---
-import { Image } from 'astro:assets';
-import { Icon } from 'astro-icon/components';
-import { getRelativeLocaleUrl } from 'astro:i18n';
-import Base from '@/layouts/Base.astro';
-import heroImage from '@/assets/hero.jpg';
-import '@/styles/demo.css';
-
-const remoteHeroImage =
-	'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=450&fit=crop&auto=format';
-
-const enHome = getRelativeLocaleUrl('en', '');
+/**
+ * Home de arranque. Cada bloque viene del kit y recibe su rama de
+ * `content/index.json`, cuyo contrato está en `cms/page.index.yaml`.
+ *
+ * Para construir el sitio real: cambia la composición de bloques aquí, el
+ * contenido en `content/`, el schema en `cms/` y el diseño en
+ * `src/styles/site.css`. El markup no se toca — vive en el kit.
+ */
+import Base from '../layouts/Base.astro';
+import { Hero, Services, Contact } from '@sumaq/site-kit';
+import data from '../../content/index.json';
 ---
 
-<Base title="Sumaq — Vorlage" lang="de">
-	<main class="demo">
-		<p class="demo__eyebrow">
-			<Icon name="spark" class="icon" />
-			sumaq-astro-base
-		</p>
-		<h1 class="demo__title">Sumaq</h1>
-		<p class="demo__lead sq-align-left">
-			Statische Astro-Vorlage mit CSS plain, CMS-Utilities (<span class="sq-strong">sq-*</span>),
-			MDX, Icons, i18n, Sitemap und Dev-Plugins.
-		</p>
-
-		<nav class="demo__nav">
-			<a href={enHome}>English</a>
-			<a href="/demo/">MDX Demo</a>
-		</nav>
-
-		<div class="demo__media">
-			<Image
-				src={heroImage}
-				alt="Willkommensbild von Sumaq"
-				width={800}
-				height={450}
-			/>
-			<Image
-				src={remoteHeroImage}
-				alt="Berglandschaft (entferntes Bild, optimiert)"
-				width={800}
-				height={450}
-			/>
-		</div>
-	</main>
+<Base seo={data.seo}>
+	<Hero {...data.hero} />
+	<Services {...data.services} />
+	<Contact {...data.contact} />
 </Base>

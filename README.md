@@ -1,98 +1,137 @@
 # sumaq-astro-base
 
-Plantilla base de Astro 7 para sitios **estáticos** de Sumaq. CSS plano por proyecto + utilidades CMS (`sq-*`), MDX, icons, i18n, sitemap, robots.txt y plugins Vite de desarrollo.
+Plantilla **única** de la que nace cada repo `www-*` de cliente. Astro 7 estático
+sobre [`@sumaq/site-kit`](https://github.com/elingan/sumaq-packages): el kit trae la
+configuración, los layouts y los bloques; este repo trae el contenido, la composición
+de la página y el diseño.
 
-## Crear un proyecto nuevo
+> **No hay una segunda plantilla.** Si encuentras otra (`sumaq-cli/templates/`), es
+> anterior a la unificación del 13 de agosto de 2026 y no debe usarse.
+
+## Qué aporta cada lado
+
+| | Dónde vive | Qué es |
+| --- | --- | --- |
+| Configuración de Astro, sitemap, validación de contenido | `@sumaq/site-kit/config` | `defineSumaqSite()` |
+| Layout, cabecera, pie, SEO, 16 bloques | `@sumaq/site-kit` | markup con `sq-*` y `data-cms` |
+| Reset CSS y vocabulario `sq-*` del CMS | `@sumaq/site-kit/tokens.css` | inventario único |
+| **Contenido** | `content/*.json` | lo que edita la clienta |
+| **Contrato del contenido** | `cms/*.yaml` | lo que el editor y el build validan |
+| **Composición de la página** | `src/pages/*.astro` | qué bloques y en qué orden |
+| **Diseño** | `src/styles/site.css` | lo que se vende |
+
+La regla que sostiene el modelo: **el markup no se copia nunca**. Si un bloque no
+encaja, se cambia en el kit y lo heredan los ~100 sitios; no se forkea aquí.
+
+## Crear un sitio nuevo
 
 ```bash
 pnpm create astro@latest -- --template elingan/sumaq-astro-base
-cd <nombre-del-proyecto>
-cp .env.example .env   # editar SITE_URL
+cd www-cliente-at
+cp .env.example .env          # editar SITE_URL
 pnpm install
 pnpm dev
 ```
 
-Renombra el campo `"name"` en `package.json` al crear el sitio.
+Después, renombra `"name"` en `package.json` al del repo (`www-cliente-at`).
+
+> ⚠️ **Mientras `@sumaq/*` no esté publicado en npmjs**, `pnpm install` fallará con un
+> 404 en `@sumaq/cms-schema` (llega como dependencia transitiva del kit). Hasta
+> entonces, enlaza los paquetes locales:
+>
+> ```bash
+> cd ../sumaq-packages && ./scripts/install.sh
+> ./scripts/link-into.sh ../sites/www-cliente-at --only site-kit
+> ```
 
 ## Comandos
 
 | Comando | Acción |
 | --- | --- |
 | `pnpm dev` | Servidor de desarrollo (`--host`, con QR en terminal) |
-| `pnpm build` | Build estático en `./dist/` |
-| `pnpm preview` | Preview local del build (`astro preview`) |
+| `pnpm build` | Build estático en `./dist/` — **valida el contenido antes de emitir** |
+| `pnpm preview` | Preview local del build |
 
-## Configuración incluida
+## La puerta de validación
 
-- Astro 7, TypeScript strict, alias `@/*`
-- Output estático (sin adapter)
-- `@astrojs/sitemap` + `src/pages/robots.txt.ts` vía `SITE_URL`
-- CSS plano: `global.css` (reset + tokens) + `cms-utils.css` (`sq-*`)
-- `@astrojs/mdx`
-- `astro-icon` (`src/assets/icons/`)
-- i18n nativo: `de` (default, sin prefijo) y `en` (`/en/`)
-- Fuentes Google vía `astro:assets` (`--font-inter`)
-- Imágenes con `sharp`
-- Dev: `vite-plugin-qrcode` + `vite-plugin-devtools-json`
-- **Sin** Tailwind ni DaisyUI
+`defineSumaqSite()` engancha `@sumaq/cms-schema` en `astro:build:start`: contrasta cada
+`content/*.json` con su `cms/*.yaml` **antes** de generar páginas. Si un campo marcado
+`required: true` está vacío, el build falla y no se sube nada:
 
-## Estilos y CMS
+```
+✗ content/index.json no cumple cms/page.index.yaml
 
-| Archivo | Rol |
-| --- | --- |
-| `src/styles/global.css` | Reset ligero y tokens (`--color-*`, `--space-*`) |
-| `src/styles/cms-utils.css` | Whitelist editable por CMS (`sq-align-*`, `sq-strong`, `sq-muted`, …) |
-| CSS del sitio | Diseño del proyecto (p. ej. `site.css`); no utility soup |
+  hero.title             Titel is required
+  contact.cards[0].phone Telefon is required
 
-El editor CMS solo debe emitir clases `sq-*` documentadas. Ampliar esa lista con criterio; no reintroducir Tailwind.
-
-## Rutas de ejemplo (humo)
-
-| Ruta | Qué verifica |
-| --- | --- |
-| `/` | Home DE, CSS, Font, Image, Icon, i18n, `sq-*` |
-| `/en/` | Locale EN |
-| `/demo/` | MDX + Icon + `sq-*` |
-
-Sustituye estas páginas (y `demo.css`) al construir el sitio real.
-
-## Variables de entorno
-
-```bash
-# .env
-SITE_URL=https://tu-dominio.com
+  El sitio no se ha publicado. No se ha subido nada a Bunny.
 ```
 
-`SITE_URL` alimenta sitemap, robots.txt y URLs canónicas en build.
+**Marca `required: true` en todo campo sin el cual la página queda rota.** Un schema sin
+campos obligatorios convierte la puerta en decorativa: solo atrapa corrupción estructural
+(una lista donde iba un objeto), que es el caso raro. El caso frecuente —una terapeuta
+borra su teléfono— pasaría limpio.
 
 ## Estructura
 
 ```text
 /
-├── cms/                 # Esquemas YAML del CMS
-├── public/              # Assets estáticos, favicons
+├── cms/                  # Contrato del contenido (schemas YAML)
+│   └── page.index.yaml
+├── content/              # Contenido editable (app o IDE)
+│   └── index.json
+├── public/               # Assets estáticos servidos tal cual
 ├── src/
-│   ├── assets/          # Imágenes + icons/
-│   ├── components/
-│   ├── data/
-│   ├── layouts/         # Base.astro, MdxBase.astro
-│   ├── pages/           # Rutas (+ en/ para i18n)
-│   └── styles/          # global.css, cms-utils.css, demo.css
-├── astro.config.mjs
-└── .env.example
+│   ├── assets/           # Imágenes procesadas por Astro (logo.svg)
+│   ├── layouts/
+│   │   └── Base.astro    # Envuelve el Base del kit: logo, CSS, header/footer
+│   ├── pages/
+│   │   ├── index.astro   # Composición de bloques
+│   │   └── robots.txt.ts
+│   └── styles/
+│       ├── global.css    # Importa tokens del kit + tokens del sitio
+│       └── site.css      # El diseño
+├── astro.config.mjs      # defineSumaqSite()
+└── pnpm-workspace.yaml   # allowBuilds: esbuild, sharp
 ```
+
+## Estilos
+
+Tres capas, y la frontera importa:
+
+1. **Reset y vocabulario `sq-*`** → `@sumaq/site-kit/tokens.css`. No los redefinas: el
+   editor de la app solo emite clases de esa lista, y duplicarlas aquí desincroniza el
+   sitio del editor.
+2. **Tokens del sitio** → `:root` en `global.css`. Color, tipografía, espaciado. El kit
+   espera al menos `--color-text`, `--color-bg`, `--color-muted` y `--color-accent`.
+3. **Diseño** → `site.css`. Cámbialo entero. Dos sitios con el mismo `Hero` pueden ser
+   irreconocibles entre sí.
+
+Sin Tailwind ni DaisyUI, a propósito.
+
+## Sitios multiidioma
+
+La plantilla es monolingüe (`de`). Ningún cliente ha pedido i18n todavía, así que
+`defineSumaqSite()` no lo expone. Cuando haga falta, el cambio son dos líneas en
+`config.ts` del kit — pero hay que decidir a la vez cómo se traducen `cms/` y `content/`,
+que es la parte cara. Ver la nota en `packages/site-kit/src/config.ts`.
+
+## Versiones
+
+`@sumaq/site-kit`, `astro` y `sharp` se fijan en **versión exacta, sin `^`**, y
+`pnpm-lock.yaml` se commitea. Un rango haría que ~100 sitios cambiaran solos en el
+siguiente build; con versión exacta, actualizar es un acto deliberado que la app
+orquesta commit a commit.
+
+`sharp` es `peerDependency` del kit y **dependencia directa de cada sitio**: Astro lo
+resuelve desde la raíz del proyecto que construye, no desde el paquete que lo declara.
 
 ## Despliegue
 
-`pnpm build` genera HTML/CSS/JS en `dist/`. El hosting es externo a esta plantilla: publica el contenido de `dist/`.
-
-## Flujo Sumaq
-
-Punto de partida para **sumaq-site-builder**. No re-scaffoldear el andamiaje.
+`pnpm build` genera `dist/`. La publicación no es asunto de esta plantilla: el repo vive
+en Gitea, el `act_runner` construye y el resultado va a Bunny Storage.
 
 ## Documentación
 
-- [Astro](https://docs.astro.build)
-- [i18n](https://docs.astro.build/en/guides/internationalization/)
-- [Styling](https://docs.astro.build/en/guides/styling/)
-- [MDX](https://docs.astro.build/en/guides/integrations-guide/mdx/)
+- [Contrato de bloque](https://github.com/elingan/sumaq-packages) — `amauta/packages/block-contract.md`
+- [Astro](https://docs.astro.build) · [Styling](https://docs.astro.build/en/guides/styling/)

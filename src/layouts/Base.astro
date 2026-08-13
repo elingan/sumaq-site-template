@@ -1,29 +1,27 @@
 ---
-import { Font } from 'astro:assets';
-import '@/styles/global.css';
-import '@/styles/cms-utils.css';
+/**
+ * Base del sitio: envuelve el layout del kit y le da lo que es propio de este
+ * repo — el logo, el CSS y los valores por defecto de cabecera y pie.
+ *
+ * La cascada: `content/index.json` define header y footer una sola vez; cada
+ * página puede sobrescribirlos pasando sus propios `header` / `footer`.
+ */
+import { Base as KitBase } from '@sumaq/site-kit';
+import logo from '../assets/logo.svg';
+import '../styles/global.css';
+import defaults from '../../content/index.json';
 
 interface Props {
-	title?: string;
-	lang?: string;
+	seo?: Record<string, any>;
+	header?: Record<string, any>;
+	footer?: Record<string, any>;
 }
 
-const { title = 'Sumaq', lang = 'de' } = Astro.props;
+const { seo = {}, header: headerOverride, footer: footerOverride } = Astro.props;
+const header = { ...defaults.header, ...headerOverride };
+const footer = { ...defaults.footer, ...footerOverride };
 ---
 
-<!doctype html>
-<html lang={lang}>
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<link rel="sitemap" href="/sitemap-index.xml" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
-		<Font cssVariable="--font-inter" preload />
-	</head>
-	<body>
-		<slot />
-	</body>
-</html>
+<KitBase seo={seo} header={header} footer={footer} logo={logo}>
+	<slot />
+</KitBase>

@@ -1,14 +1,41 @@
 # sumaq-astro-base
 
-Plantilla base para sitios **estáticos** de Sumaq. No re-scaffoldear: extender sobre esta estructura.
+Plantilla única de los sitios `www-*` de cliente. Astro 7 estático sobre
+`@sumaq/site-kit`. **No re-scaffoldear**: extender sobre esta estructura.
 
-## Crear desde la plantilla
+## La regla que no se rompe
 
-```bash
-pnpm create astro@latest -- --template elingan/sumaq-astro-base
-```
+El markup vive en el kit. Si un bloque no encaja, **se arregla en
+`@sumaq/site-kit` y lo heredan los ~100 sitios**. No se copia un `.astro` del kit a
+`src/components/` para retocarlo: eso reintroduce el fork que el kit vino a eliminar.
+
+En este repo solo hay cuatro cosas propias:
+
+| Qué | Dónde |
+| --- | --- |
+| Contenido | `content/*.json` |
+| Contrato del contenido | `cms/*.yaml` |
+| Composición de la página | `src/pages/*.astro` |
+| Diseño | `src/styles/site.css` |
+
+## Añadir una página
+
+1. `cms/page.<nombre>.yaml` — el contrato. Identificadores (`name`) en inglés,
+   etiquetas (`label`) en el idioma de la clienta. Marca `required: true` en todo campo
+   sin el cual la página queda rota.
+2. `content/<nombre>.json` — los datos, con la misma forma.
+3. `src/pages/<nombre>.astro` — importa bloques de `@sumaq/site-kit` y les pasa su rama
+   del JSON.
+4. Estilos nuevos, si hacen falta, en `site.css` usando clases `sq-*` existentes.
+
+El build valida 2 contra 1 y falla si no cuadran.
 
 ## Desarrollo
+
+```bash
+pnpm dev      # astro dev --host, con QR
+pnpm build    # valida contenido y emite dist/
+```
 
 Al iniciar el dev server, usar modo background:
 
@@ -18,53 +45,31 @@ astro dev --background
 
 Gestionar con `astro dev stop`, `astro dev status` y `astro dev logs`.
 
-Scripts del proyecto: `pnpm dev` (`astro dev --host`), `pnpm build`, `pnpm preview`.
-
-## Despliegue
-
-Build estático → `dist/` → publicar en el hosting del cliente (sin adapter Astro).
-
-```bash
-SITE_URL=https://dominio.com pnpm build
-```
-
-`SITE_URL` alimenta sitemap y `robots.txt` (build time, `.env` / CI).
-
 ## Estilos
 
-- **Diseño del sitio:** CSS plano por proyecto (tokens en `global.css`, estilos en p. ej. `site.css`).
-- **Retoques CMS:** solo clases `sq-*` de `cms-utils.css` (alineación, strong, muted, etc.).
-- **No** Tailwind ni DaisyUI en esta plantilla.
+- **Reset y `sq-*`**: los trae `@sumaq/site-kit/tokens.css`. No redefinir aquí — el
+  editor de la app solo emite clases de esa lista y duplicarlas la desincroniza.
+- **Tokens del sitio**: `:root` en `global.css`. El kit espera al menos `--color-text`,
+  `--color-bg`, `--color-muted`, `--color-accent`.
+- **Diseño**: `site.css`, CSS plano. Sin Tailwind ni DaisyUI.
 
-## Estructura esperada
+## Bloques disponibles en el kit
 
-| Ruta | Uso |
-| --- | --- |
-| `src/pages/` | Rutas Astro (+ `en/` para i18n) |
-| `src/components/` | Componentes por bloque de página |
-| `src/layouts/` | Layouts compartidos |
-| `src/styles/` | `global.css`, `cms-utils.css`, CSS del sitio |
-| `src/assets/icons/` | SVG para `astro-icon` |
-| `src/data/` | JSON editable por CMS |
-| `cms/` | Esquemas YAML del módulo PagesCMS |
-| `public/` | Assets estáticos, favicons |
+`Hero`, `Services`, `Contact`, `TeamTeaser`, `TeamDirectory`, `IntroCta`,
+`LocationsOverview`, `Audience`, `Pricing`, `CtaBand`, `PageBanner`, `Generic`,
+`BlockRenderer`, `EmergencyPrimary`, `EmergencyGrid`, `EmergencyHelplines`.
 
-## Flujo con sumaq-site-builder
+Todos emiten `data-cms` en los campos editables — es lo que permitirá la vista previa en
+vivo del editor.
 
-1. Partir de esta plantilla (ya configurada).
-2. Usar el skill `sumaq-site-builder` para generar componentes, `src/data/*.json` y `cms/*.yaml`.
-3. No regenerar `package.json` ni `astro.config.mjs` salvo que el proyecto lo requiera.
-4. El CMS solo debe permitir clases `sq-*` de la whitelist.
+## Versiones
+
+Versión exacta sin `^` para `@sumaq/site-kit`, `astro` y `sharp`, y `pnpm-lock.yaml`
+commiteado. `sharp` va como dependencia directa del sitio aunque el kit lo declare como
+peer: Astro lo resuelve desde la raíz del proyecto que construye.
 
 ## Documentación Astro
 
-https://docs.astro.build
-
-Guías relevantes:
-
-- [Routing](https://docs.astro.build/en/guides/routing/)
-- [Componentes Astro](https://docs.astro.build/en/basics/astro-components/)
-- [Content collections](https://docs.astro.build/en/guides/content-collections/)
-- [Styling](https://docs.astro.build/en/guides/styling/)
-- [i18n](https://docs.astro.build/en/guides/internationalization/)
-- [MDX](https://docs.astro.build/en/guides/integrations-guide/mdx/)
+https://docs.astro.build — [Routing](https://docs.astro.build/en/guides/routing/) ·
+[Componentes](https://docs.astro.build/en/basics/astro-components/) ·
+[Styling](https://docs.astro.build/en/guides/styling/)
