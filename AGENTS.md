@@ -18,6 +18,10 @@ En este repo solo hay cuatro cosas propias:
 | Composición de la página | `src/pages/*.astro` |
 | Diseño | `src/styles/site.css` |
 
+`.gitea/workflows/deploy.yml` **no** es una de ellas: se hereda tal cual y es idéntico en
+los ~100 sitios. Si un despliegue necesita algo distinto, se arregla ahí y lo heredan
+todos — el mismo principio que con el markup del kit.
+
 ## Añadir una página
 
 1. `schema/page.<nombre>.yaml` — el contrato. Identificadores (`name`) en inglés,
@@ -67,6 +71,28 @@ vivo del editor.
 Versión exacta sin `^` para `@sumaq/site-kit`, `astro` y `sharp`, y `pnpm-lock.yaml`
 commiteado. `sharp` va como dependencia directa del sitio aunque el kit lo declare como
 peer: Astro lo resuelve desde la raíz del proyecto que construye.
+
+`packageManager` fija la versión de pnpm. Sin él, el `corepack enable` del workflow usa la
+que traiga la imagen del runner y el formato del lockfile puede dejar de cuadrar con
+`--frozen-lockfile`.
+
+**El lockfile se regenera sin el enlace local del kit.** En desarrollo `@sumaq/site-kit`
+suele estar enlazado desde `sumaq-packages` (`scripts/link-into.sh`); un
+`pnpm install --lockfile-only` sobre ese `node_modules` grabaría un `link:` que en CI no
+resuelve. Hazlo en una copia limpia:
+
+```bash
+tmp=$(mktemp -d) && cp package.json pnpm-workspace.yaml .node-version "$tmp/" \
+  && (cd "$tmp" && pnpm install --lockfile-only) && cp "$tmp/pnpm-lock.yaml" .
+```
+
+## Despliegue
+
+Lo hace `.gitea/workflows/deploy.yml`, heredado sin cambios. El dominio sale del nombre del
+repo (`www-demo-graz-at` → `demo-graz.at`) y el entorno de dos variables de Actions de la
+organización: `SITE_DEPLOY_TARGET` (`docroot` en el lab, `bunny` en `kallpa-server`) y
+`SITE_URL`. Ambos runners responden a la label `sumaq-site`. Detalle en el
+[README](README.md#despliegue).
 
 ## Documentación Astro
 

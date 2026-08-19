@@ -1,0 +1,102 @@
+# Publicación del sitio. Este fichero es IDÉNTICO en los ~100 repos www-*: no
+# lleva el dominio ni la URL incrustados, así que la plantilla lo entrega tal
+# cual y nadie tiene que retocarlo al crear un sitio.
+#
+# Va en .gitea/workflows/ y no en .github/workflows/ a propósito: el `origin` de
+# la plantilla es GitHub, y allí este workflow intentaría ejecutarse en cada push
+# contra un runner que no existe.
+#
+# Lo que cambia entre entornos son dos variables de Actions de la organización:
+#
+#   SITE_DEPLOY_TARGET   docroot (lab local, Caddy)  ·  bunny (kallpa-server)
+#   SITE_URL             URL pública del sitio; la fija sumaq-app al crear el
+#                        sitio. Sin ella se usa la del lab, para que el sitemap
+#                        y robots.txt apunten a donde el sitio se sirve de
+#                        verdad en vez de a example.com.
+#
+# Los dos runners responden a la misma label `sumaq-site`, porque no hay ninguna
+# instancia donde ambos sean candidatos: un repo del Gitea local solo puede
+# construir en el runner del lab, y uno de kallpa-server solo en el suyo.
+
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: sumaq-site
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Habilitar pnpm
+        run: corepack enable
+
+      # www-demo-graz-at → demo-graz.at — la misma convención que local-server/seed.sh:
+      # se quita el prefijo www- y el último guion pasa a ser el punto del TLD.
+      - name: Resolver dominio y destino
+        env:
+          REPO: ${{ gitea.repository }}
+          SITE_URL_VAR: ${{ vars.SITE_URL }}
+          TARGET_VAR: ${{ vars.SITE_DEPLOY_TARGET }}
+        run: |
+          set -euo pipefail
+          name="${REPO##*/}"
+          name="${name#www-}"
+          domain="${name%-*}.${name##*-}"
+
+          # Un destino no reconocido tiene que parar el job aquí: si se filtrara
+          # hasta los `if:` de abajo no se ejecutaría ningún paso de publicación
+          # y el workflow acabaría en verde sin haber publicado nada.
+          target="${TARGET_VAR:-docroot}"
+          case "$target" in
+            docroot|bunny) ;;
+            *) echo "SITE_DEPLOY_TARGET no reconocido: '${target}'" >&2; exit 1 ;;
+          esac
+
+          {
+            echo "DOMAIN=${domain}"
+            echo "DEPLOY_TARGET=${target}"
+            echo "SITE_URL=${SITE_URL_VAR:-http://${domain}.localhost:8080}"
+          } >> "$GITHUB_ENV"
+
+          echo "Dominio ${domain} · destino ${target}"
+
+      - name: Instalar
+        run: pnpm install --frozen-lockfile
+
+      # Falla si content/*.json no cumple schema/*.yaml — la puerta que impide
+      # publicar un sitio roto. SITE_URL viene del paso anterior.
+      - name: Build Astro
+        run: pnpm build
+
+      - name: Comprobar que hay build
+        run: |
+          set -euo pipefail
+          [[ -d dist ]] || { echo "No existe dist/ tras el build" >&2; exit 1; }
+
+      # Lab: el runner monta el docroot del host en /sites (local-server/runner/config.yaml).
+      - name: Publicar en el docroot del lab
+        if: env.DEPLOY_TARGET == 'docroot'
+        run: |
+          set -euo pipefail
+          mkdir -p "/sites/${DOMAIN}"
+          # rsync no viene en node:22-bookworm; cp -a basta
+          find "/sites/${DOMAIN}" -mindepth 1 -delete
+          cp -a dist/. "/sites/${DOMAIN}/"
+          echo "Publicado → http://${DOMAIN}.localhost:8080/"
+
+      # Producción: PUT a la Storage Zone y purga de la Pull Zone. La contraseña
+      # de escritura de la zona vive solo en los secretos del runner de
+      # kallpa-server, nunca la API key de cuenta.
+      - name: Publicar en Bunny Storage
+        if: env.DEPLOY_TARGET == 'bunny'
+        env:
+          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+        run: |
+          echo "Publicación en Bunny todavía sin implementar (docs/bunny-cdn.md §8)." >&2
+          echo "No se publica nada antes que exista: fallar es lo correcto aquí." >&2
+          exit 1

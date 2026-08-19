@@ -35,14 +35,19 @@ pnpm dev
 
 Después, renombra `"name"` en `package.json` al del repo (`www-cliente-at`).
 
-> ⚠️ **Mientras `@sumaq/*` no esté publicado en npmjs**, `pnpm install` fallará con un
-> 404 en `@sumaq/cms-schema` (llega como dependencia transitiva del kit). Hasta
-> entonces, enlaza los paquetes locales:
->
-> ```bash
-> cd ../sumaq-packages && ./scripts/install.sh
-> ./scripts/link-into.sh ../sites/www-cliente-at --only site-kit
-> ```
+`@sumaq/site-kit` y `@sumaq/cms-schema` están **publicados y son públicos** en npmjs, así
+que `pnpm install` funciona sin más — igual que en el runner. El aviso anterior sobre un 404
+en `@sumaq/cms-schema` estaba obsoleto.
+
+Para desarrollar el kit y el sitio a la vez, enlaza los paquetes locales:
+
+```bash
+cd ../sumaq-packages && ./scripts/install.sh
+./scripts/link-into.sh ../sites/www-cliente-at --only site-kit
+```
+
+Con el enlace puesto, **no regeneres `pnpm-lock.yaml` en ese árbol**: grabaría un `link:`
+que el runner no resuelve. Ver [`AGENTS.md`](AGENTS.md#versiones).
 
 ## Comandos
 
@@ -76,6 +81,8 @@ borra su teléfono— pasaría limpio.
 
 ```text
 /
+├── .gitea/workflows/
+│   └── deploy.yml        # Publicación. Idéntico en todos los sitios, no se toca
 ├── schema/               # Contrato del contenido (schemas YAML)
 │   └── page.index.yaml
 ├── content/              # Contenido editable (app o IDE)
@@ -128,8 +135,30 @@ resuelve desde la raíz del proyecto que construye, no desde el paquete que lo d
 
 ## Despliegue
 
-`pnpm build` genera `dist/`. La publicación no es asunto de esta plantilla: el repo vive
-en Gitea, el `act_runner` construye y el resultado va a Bunny Storage.
+`pnpm build` genera `dist/`. Quien publica es
+[`.gitea/workflows/deploy.yml`](.gitea/workflows/deploy.yml), que **cada sitio hereda de
+aquí sin tocarlo**: no lleva el dominio ni la URL incrustados, así que el fichero es
+idéntico en los ~100 repos. El dominio lo deriva del nombre del repo —`www-demo-graz-at`
+→ `demo-graz.at`, la misma convención que `local-server/seed.sh`— y lo que cambia entre
+entornos son dos variables de Actions de la organización:
+
+| Variable | Lab local | `kallpa-server` |
+| --- | --- | --- |
+| `SITE_DEPLOY_TARGET` | `docroot` — `cp` al docroot que sirve Caddy | `bunny` — `PUT` a la Storage Zone y purga |
+| `SITE_URL` | sin valor: se usa `http://<dominio>.localhost:8080` | la URL pública, que fija `sumaq-app` al crear el sitio |
+
+`SITE_URL` es una variable y no algo derivado del nombre del repo porque el apex-vs-`www`
+y el esquema son decisiones del sitio, no del repo. Sin ella el build emitiría
+`https://example.com` en `robots.txt` y en el sitemap; el valor del lab hace que apunten a
+donde el sitio se sirve de verdad.
+
+Va en `.gitea/workflows/` y no en `.github/workflows/` a propósito: el `origin` de esta
+plantilla es GitHub, y allí el workflow intentaría ejecutarse en cada push contra un runner
+que no existe.
+
+Los dos runners responden a la misma label **`sumaq-site`**. No hace falta elegir runner en
+el workflow porque no hay ninguna instancia donde ambos sean candidatos: un repo del Gitea
+local solo puede construir en el runner del lab, y uno de `kallpa-server` solo en el suyo.
 
 ## Documentación
 
