@@ -1,4 +1,4 @@
-# sumaq-astro-base
+# sumaq-site-template
 
 Plantilla **única** de la que nace cada repo `www-*` de cliente. Astro 7 estático
 sobre [`@sumaq/site-kit`](https://github.com/elingan/sumaq-packages): el kit trae la
@@ -16,7 +16,7 @@ de la página y el diseño.
 | Layout, cabecera, pie, SEO, 16 bloques | `@sumaq/site-kit` | markup con `sq-*` y `data-cms` |
 | Reset CSS y vocabulario `sq-*` del CMS | `@sumaq/site-kit/tokens.css` | inventario único |
 | **Contenido** | `content/*.json` | lo que edita la clienta |
-| **Contrato del contenido** | `cms/*.yaml` | lo que el editor y el build validan |
+| **Contrato del contenido** | `schema/*.yaml` | lo que el editor y el build validan |
 | **Composición de la página** | `src/pages/*.astro` | qué bloques y en qué orden |
 | **Diseño** | `src/styles/site.css` | lo que se vende |
 
@@ -26,7 +26,7 @@ encaja, se cambia en el kit y lo heredan los ~100 sitios; no se forkea aquí.
 ## Crear un sitio nuevo
 
 ```bash
-pnpm create astro@latest -- --template elingan/sumaq-astro-base
+pnpm create astro@latest -- --template elingan/sumaq-site-template
 cd www-cliente-at
 cp .env.example .env          # editar SITE_URL
 pnpm install
@@ -55,11 +55,11 @@ Después, renombra `"name"` en `package.json` al del repo (`www-cliente-at`).
 ## La puerta de validación
 
 `defineSumaqSite()` engancha `@sumaq/cms-schema` en `astro:build:start`: contrasta cada
-`content/*.json` con su `cms/*.yaml` **antes** de generar páginas. Si un campo marcado
+`content/*.json` con su `schema/*.yaml` **antes** de generar páginas. Si un campo marcado
 `required: true` está vacío, el build falla y no se sube nada:
 
 ```
-✗ content/index.json no cumple cms/page.index.yaml
+✗ content/index.json no cumple schema/page.index.yaml
 
   hero.title             Titel is required
   contact.cards[0].phone Telefon is required
@@ -76,7 +76,7 @@ borra su teléfono— pasaría limpio.
 
 ```text
 /
-├── cms/                  # Contrato del contenido (schemas YAML)
+├── schema/               # Contrato del contenido (schemas YAML)
 │   └── page.index.yaml
 ├── content/              # Contenido editable (app o IDE)
 │   └── index.json
@@ -113,7 +113,7 @@ Sin Tailwind ni DaisyUI, a propósito.
 
 La plantilla es monolingüe (`de`). Ningún cliente ha pedido i18n todavía, así que
 `defineSumaqSite()` no lo expone. Cuando haga falta, el cambio son dos líneas en
-`config.ts` del kit — pero hay que decidir a la vez cómo se traducen `cms/` y `content/`,
+`config.ts` del kit — pero hay que decidir a la vez cómo se traducen `schema/` y `content/`,
 que es la parte cara. Ver la nota en `packages/site-kit/src/config.ts`.
 
 ## Versiones

@@ -1,4 +1,4 @@
-# sumaq-astro-base
+# sumaq-site-template
 
 Plantilla única de los sitios `www-*` de cliente. Astro 7 estático sobre
 `@sumaq/site-kit`. **No re-scaffoldear**: extender sobre esta estructura.
@@ -14,13 +14,13 @@ En este repo solo hay cuatro cosas propias:
 | Qué | Dónde |
 | --- | --- |
 | Contenido | `content/*.json` |
-| Contrato del contenido | `cms/*.yaml` |
+| Contrato del contenido | `schema/*.yaml` |
 | Composición de la página | `src/pages/*.astro` |
 | Diseño | `src/styles/site.css` |
 
 ## Añadir una página
 
-1. `cms/page.<nombre>.yaml` — el contrato. Identificadores (`name`) en inglés,
+1. `schema/page.<nombre>.yaml` — el contrato. Identificadores (`name`) en inglés,
    etiquetas (`label`) en el idioma de la clienta. Marca `required: true` en todo campo
    sin el cual la página queda rota.
 2. `content/<nombre>.json` — los datos, con la misma forma.
