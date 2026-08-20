@@ -138,17 +138,25 @@ resuelve desde la raíz del proyecto que construye, no desde el paquete que lo d
 `pnpm build` genera `dist/`. Quien publica es
 [`.gitea/workflows/deploy.yml`](.gitea/workflows/deploy.yml), que **cada sitio hereda de
 aquí sin tocarlo**: no lleva el dominio ni la URL incrustados, así que el fichero es
-idéntico en los ~100 repos. El dominio lo deriva del nombre del repo —`www-demo-graz-at`
-→ `demo-graz.at`, la misma convención que `local-server/seed.sh`— y lo que cambia entre
-entornos son dos variables de Actions de la organización:
+idéntico en los ~100 repos. Lo que cambia son tres variables de Actions, y el nivel al
+que vive cada una dice a qué pertenece el dato:
 
-| Variable | Lab local | `kallpa-server` |
-| --- | --- | --- |
-| `SITE_DEPLOY_TARGET` | `docroot` — `cp` al docroot que sirve Caddy | `bunny` — `PUT` a la Storage Zone y purga |
-| `SITE_URL` | sin valor: se usa `http://<dominio>.localhost:8080` | la URL pública, que fija `sumaq-app` al crear el sitio |
+| Variable | Nivel | Lab local | `kallpa-server` |
+| --- | --- | --- | --- |
+| `SITE_DEPLOY_TARGET` | organización | `docroot` — `cp` al docroot que sirve Caddy | `bunny` — `PUT` a la Storage Zone y purga |
+| `SITE_DOMAIN` | repo | sin valor: se deriva del nombre del repo | el dominio real del sitio, que escribe `sumaq-app` |
+| `SITE_URL` | repo | sin valor: se usa `http://<dominio>.localhost:8080` | la URL pública, que escribe `sumaq-app` |
 
-`SITE_URL` es una variable y no algo derivado del nombre del repo porque el apex-vs-`www`
-y el esquema son decisiones del sitio, no del repo. Sin ella el build emitiría
+El destino es del **entorno**, así que una variable de organización lo describe bien. El
+dominio y la URL son del **sitio**: puestos en la organización le darían a los ~100 repos
+el dominio del primero. Los escribe `sumaq-app` en el repo cuando un admin fija el dominio
+(`setSiteDomainCommand` → `syncSiteDeployVars`), y ahí ganan sobre cualquier valor de la
+organización.
+
+Sin `SITE_DOMAIN` el workflow deriva el dominio del nombre del repo —`www-demo-graz-at` →
+`demo-graz.at`, la misma convención que `local-server/seed.sh`—. Esa derivación es exacta
+para el lab y para cualquier dominio de dos etiquetas, y falsa para un `.co.uk` o un
+subdominio: de ahí que exista la variable. Sin `SITE_URL` el build emitiría
 `https://example.com` en `robots.txt` y en el sitemap; el valor del lab hace que apunten a
 donde el sitio se sirve de verdad.
 

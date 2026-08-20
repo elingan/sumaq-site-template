@@ -6,13 +6,21 @@
 # la plantilla es GitHub, y allí este workflow intentaría ejecutarse en cada push
 # contra un runner que no existe.
 #
-# Lo que cambia entre entornos son dos variables de Actions de la organización:
+# Lo que cambia lo dicen tres variables de Actions, y el nivel al que vive cada
+# una no es un detalle: describe a qué pertenece el dato.
 #
-#   SITE_DEPLOY_TARGET   docroot (lab local, Caddy)  ·  bunny (kallpa-server)
-#   SITE_URL             URL pública del sitio; la fija sumaq-app al crear el
-#                        sitio. Sin ella se usa la del lab, para que el sitemap
-#                        y robots.txt apunten a donde el sitio se sirve de
-#                        verdad en vez de a example.com.
+#   SITE_DEPLOY_TARGET   (organización) docroot (lab, Caddy) · bunny (kallpa-server).
+#                        Describe el entorno, así que es común a los ~100 repos.
+#   SITE_DOMAIN          (repo) dominio real del sitio. Lo escribe sumaq-app al
+#                        fijar el dominio. Sin ella se deriva del nombre del repo,
+#                        que solo acierta con dominios de dos etiquetas.
+#   SITE_URL             (repo) URL pública; alimenta `site:` en Astro y de ahí
+#                        sitemap y canonical. También la escribe sumaq-app. Sin
+#                        ella se usa la del lab, para que el sitemap apunte a
+#                        donde el sitio se sirve de verdad en vez de a example.com.
+#
+# Las dos de repo tienen que ser de repo: una URL pública identifica a un sitio, y
+# puesta en la organización le pondría a los ~100 el dominio del primero.
 #
 # Los dos runners responden a la misma label `sumaq-site`, porque no hay ninguna
 # instancia donde ambos sean candidatos: un repo del Gitea local solo puede
@@ -35,18 +43,34 @@ jobs:
       - name: Habilitar pnpm
         run: corepack enable
 
-      # www-demo-graz-at → demo-graz.at — la misma convención que local-server/seed.sh:
-      # se quita el prefijo www- y el último guion pasa a ser el punto del TLD.
+      # El dominio lo manda sumaq-app en SITE_DOMAIN. Sin ella se deriva del nombre
+      # del repo con la convención de local-server/seed.sh —se quita el prefijo www-
+      # y el último guion pasa a ser el punto del TLD, www-demo-graz-at → demo-graz.at—,
+      # que es exacta para el lab y para cualquier dominio de dos etiquetas, y falsa
+      # para un .co.uk o un subdominio. De ahí que la variable gane.
       - name: Resolver dominio y destino
         env:
           REPO: ${{ gitea.repository }}
+          DOMAIN_VAR: ${{ vars.SITE_DOMAIN }}
           SITE_URL_VAR: ${{ vars.SITE_URL }}
           TARGET_VAR: ${{ vars.SITE_DEPLOY_TARGET }}
         run: |
           set -euo pipefail
-          name="${REPO##*/}"
-          name="${name#www-}"
-          domain="${name%-*}.${name##*-}"
+          domain="${DOMAIN_VAR:-}"
+          if [[ -z "$domain" ]]; then
+            name="${REPO##*/}"
+            name="${name#www-}"
+            domain="${name%-*}.${name##*-}"
+          fi
+
+          # El dominio acaba en un path del docroot y en el `find -delete` que lo
+          # vacía. Una variable de Actions la escribe una persona o la app, no el
+          # repo, así que se comprueba que sea un dominio antes de dejarla entrar
+          # en un borrado: con una barra o un `..` el borrado saldría del sitio.
+          if ! [[ "$domain" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+            echo "Dominio inválido: '${domain}'" >&2
+            exit 1
+          fi
 
           # Un destino no reconocido tiene que parar el job aquí: si se filtrara
           # hasta los `if:` de abajo no se ejecutaría ningún paso de publicación
