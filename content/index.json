@@ -6,9 +6,11 @@
     "description": "Psychotherapeutische Begleitung für Erwachsene und Jugendliche. Termine nach Vereinbarung.",
     "ogTitle": "Praxis Musterfrau – Psychotherapie in Graz",
     "ogDescription": "Psychotherapeutische Begleitung für Erwachsene und Jugendliche. Termine nach Vereinbarung.",
+    "ogImage": "/media/placeholder.webp",
     "ogLocale": "de_AT"
   },
   "header": {
+    "logo": "/media/logo.svg",
     "brandName": "Praxis Musterfrau",
     "brandTagline": "Psychotherapie | Beratung",
     "homeLabel": "Praxis Musterfrau – Startseite",
@@ -38,6 +40,10 @@
     "title": "Ein Raum für",
     "titleAccent": "Ihre Anliegen",
     "sectionSubtitle": "Psychotherapeutische Begleitung für Erwachsene und Jugendliche, in einem geschützten Rahmen und in Ihrem Tempo.",
+    "image": {
+      "src": "/media/placeholder.webp",
+      "alt": "Praxisräume in Graz"
+    },
     "ctas": [
       { "label": "Termin anfragen", "href": "#contact", "variant": "primary" },
       { "label": "Leistungen ansehen", "href": "#services", "variant": "ghost" }

@@ -108,7 +108,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "/sites/${DOMAIN}"
-          # rsync no viene en node:22-bookworm; cp -a basta
+          # rsync no viene en node:24-bookworm; cp -a basta
           find "/sites/${DOMAIN}" -mindepth 1 -delete
           cp -a dist/. "/sites/${DOMAIN}/"
           echo "Publicado → http://${DOMAIN}.localhost:8080/"

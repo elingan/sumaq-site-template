@@ -88,8 +88,9 @@ borra su teléfono— pasaría limpio.
 ├── content/              # Contenido editable (app o IDE)
 │   └── index.json
 ├── public/               # Assets estáticos servidos tal cual
+│   └── media/            # Imágenes del CMS (logo, placeholder del ejemplo)
 ├── src/
-│   ├── assets/           # Imágenes procesadas por Astro (logo.svg)
+│   ├── assets/           # Imágenes procesadas por Astro, si hace falta
 │   ├── layouts/
 │   │   └── Base.astro    # Envuelve el Base del kit: logo, CSS, header/footer
 │   ├── pages/

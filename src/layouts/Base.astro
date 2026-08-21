@@ -1,13 +1,12 @@
 ---
 /**
  * Base del sitio: envuelve el layout del kit y le da lo que es propio de este
- * repo — el logo, el CSS y los valores por defecto de cabecera y pie.
+ * repo — el CSS y los valores por defecto de cabecera y pie.
  *
  * La cascada: `content/index.json` define header y footer una sola vez; cada
  * página puede sobrescribirlos pasando sus propios `header` / `footer`.
  */
 import { Base as KitBase } from '@sumaq/site-kit';
-import logo from '../assets/logo.svg';
 import '../styles/global.css';
 import defaults from '../../content/index.json';
 
@@ -20,8 +19,9 @@ interface Props {
 const { seo = {}, header: headerOverride, footer: footerOverride } = Astro.props;
 const header = { ...defaults.header, ...headerOverride };
 const footer = { ...defaults.footer, ...footerOverride };
+const chrome: any = { seo, header, footer, logo: header.logo };
 ---
 
-<KitBase seo={seo} header={header} footer={footer} logo={logo}>
+<KitBase {...chrome}>
 	<slot />
 </KitBase>
