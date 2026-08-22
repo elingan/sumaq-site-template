@@ -38,7 +38,7 @@ seo:
       label: Open-Graph-Bild
       type: image
       options:
-        path: public/media
+        path: media
     - name: ogLocale
       label: Open-Graph-Locale
       type: string
@@ -50,7 +50,7 @@ header:
       label: Logo
       type: image
       options:
-        path: public/media
+        path: media
     - name: brandName
       label: Markenname
       type: string
@@ -146,7 +146,7 @@ hero:
           label: Quelle
           type: image
           options:
-            path: public/media
+            path: media
         - name: alt
           label: Alternativtext
           type: string

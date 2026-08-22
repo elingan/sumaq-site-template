@@ -9,12 +9,13 @@ El markup vive en el kit. Si un bloque no encaja, **se arregla en
 `@sumaq/site-kit` y lo heredan los ~100 sitios**. No se copia un `.astro` del kit a
 `src/components/` para retocarlo: eso reintroduce el fork que el kit vino a eliminar.
 
-En este repo solo hay cuatro cosas propias:
+En este repo solo hay cinco cosas propias:
 
 | Qué | Dónde |
 | --- | --- |
 | Contenido | `content/*.json` |
 | Contrato del contenido | `schema/*.yaml` |
+| Imágenes y adjuntos | `media/*`, `public/files/*` |
 | Composición de la página | `src/pages/*.astro` |
 | Diseño | `src/styles/site.css` |
 
@@ -48,6 +49,14 @@ astro dev --background
 ```
 
 Gestionar con `astro dev stop`, `astro dev status` y `astro dev logs`.
+
+## Imágenes
+
+`media/` en la raíz, **nunca `public/media/`**: fuera de `public/` es donde Astro las
+procesa (hash + `srcset`). El string de `content/*.json` (`/media/x-a3f9c1d2.webp`) es una
+**clave, no una URL** — renderiza con `<Media>` del kit; interpolarla en un `src=` da un
+404 silencioso, y el build lo caza. Adjuntos no-imagen a `public/files/` (`/files/x.pdf`),
+que sí necesitan URL estable. El placeholder lo pone el kit con `<Media fallback />`.
 
 ## Estilos
 

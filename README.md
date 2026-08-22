@@ -87,10 +87,13 @@ borra su teléfono— pasaría limpio.
 │   └── page.index.yaml
 ├── content/              # Contenido editable (app o IDE)
 │   └── index.json
+├── media/                # Imágenes: Astro las procesa (hash + srcset)
+│   ├── logo.svg
+│   └── manifest.json     # lqip + alt + dimensiones, lo escribe el CMS
 ├── public/               # Assets estáticos servidos tal cual
-│   └── media/            # Imágenes del CMS (logo, placeholder del ejemplo)
+│   ├── files/            # Adjuntos no-imagen del CMS (pdf, csv…)
+│   └── favicon.svg
 ├── src/
-│   ├── assets/           # Imágenes procesadas por Astro, si hace falta
 │   ├── layouts/
 │   │   └── Base.astro    # Envuelve el Base del kit: logo, CSS, header/footer
 │   ├── pages/
@@ -102,6 +105,44 @@ borra su teléfono— pasaría limpio.
 ├── astro.config.mjs      # defineSumaqSite()
 └── pnpm-workspace.yaml   # allowBuilds: esbuild, sharp
 ```
+
+## Imágenes
+
+Van en **`media/`**, hermana de `schema/` y `content/`, **no en `public/`**. Ahí Astro
+las procesa: hash de contenido en el nombre, `srcset` a cuatro anchos y una URL
+`/_astro/…` que cambia sola cuando cambia la imagen (lo que invalida la caché del CDN
+sin purgar nada). En `public/` se copiarían literales y no las tocaría nadie.
+
+Eso convierte el string del contenido en una **clave, no una URL**:
+
+```jsonc
+"image": { "alt": "Retrato", "src": "/media/portrait-a3f9c1d2.webp" }
+```
+
+Nada sirve esa ruta. **Renderiza siempre con `<Media>` del kit** — interpolar el string
+en un `src=` da un 404 silencioso:
+
+```astro
+---
+import { Media } from '@sumaq/site-kit';
+---
+<Media src={data.hero.image} sizes="(max-width: 900px) 100vw, 25rem" />
+```
+
+El build lo verifica: toda referencia `/media/*` del contenido tiene que existir en
+`media/`, y un `/uploads/*` heredado del CMS es error directo.
+
+**Imágenes puestas a mano.** Copia el fichero en `media/` y ya está: el CMS no las
+conoce, no las borra y no las sobrescribe. Referenciarlas desde un componente con
+`import` directo también funciona.
+
+**Adjuntos no-imagen** (pdf, csv) van a `public/files/` y se referencian como
+`/files/tarifas-a3f9c1d2.pdf`. Se copian tal cual porque su URL tiene que seguir
+funcionando para quien el cliente se la haya pasado.
+
+**Placeholder.** Lo trae el kit; ningún sitio necesita su propio fichero. Se activa por
+bloque con `<Media fallback />` — un hero vacío se ve mejor con un hueco, una rejilla de
+tarjetas no. Si quieres el tuyo, pon `media/placeholder.webp` y gana sobre el del kit.
 
 ## Estilos
 
