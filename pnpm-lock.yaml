@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@sumaq/site-kit':
-        specifier: 0.4.0
-        version: 0.4.0(astro@7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.3(@types/node@24.13.3))
+        specifier: 0.4.1
+        version: 0.4.1(astro@7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.3(@types/node@24.13.3))
       astro:
         specifier: 7.2.4
         version: 7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0)
@@ -666,12 +666,12 @@ packages:
   '@shikijs/vscode-textmate@10.0.2':
     resolution: {integrity: sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg==}
 
-  '@sumaq/cms-schema@0.3.0':
-    resolution: {integrity: sha512-ckrWwdY0bSnp/6QaXEg7qrMVb+8x4ZLw1b/3zDYXgLC0q76dKdj0bBfze2of7+fXhpcIBdZPpK5mmJvdZ7N9wg==}
+  '@sumaq/cms-schema@0.3.1':
+    resolution: {integrity: sha512-EHN9JtGDePLInRPZu9qrL9xanJO467nZ4BlDPqCsQjDbKuAnW0fUNDGG3/LyZHKN8U2OmM37RfsNdlQHflXxPA==}
     engines: {node: '>=22.12.0'}
 
-  '@sumaq/site-kit@0.4.0':
-    resolution: {integrity: sha512-3zYwmzCs9BFnkfeeLd5OFm3gQKBFspev4LkQMP3beZaYDiGVR5nlsBDth4IaQ2nmPpneOlZAeFc9pfmllaeSLw==}
+  '@sumaq/site-kit@0.4.1':
+    resolution: {integrity: sha512-jaEAnp2/NNXfVfYryV/jSTifnoo2K6Qr88tyoGOuyr0gicrN1SZbsBnV8WJPEsZxppYeCjrW2yew8A3dSjOCsw==}
     engines: {node: '>=22.12.0'}
     peerDependencies:
       astro: ^7.1.0
@@ -2069,14 +2069,14 @@ snapshots:
 
   '@shikijs/vscode-textmate@10.0.2': {}
 
-  '@sumaq/cms-schema@0.3.0':
+  '@sumaq/cms-schema@0.3.1':
     dependencies:
       yaml: 2.9.0
 
-  '@sumaq/site-kit@0.4.0(astro@7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.3(@types/node@24.13.3))':
+  '@sumaq/site-kit@0.4.1(astro@7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.3(@types/node@24.13.3))':
     dependencies:
       '@astrojs/sitemap': 3.7.3
-      '@sumaq/cms-schema': 0.3.0
+      '@sumaq/cms-schema': 0.3.1
       astro: 7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0)
       marked: 15.0.7
       sharp: 0.35.3(@types/node@24.13.3)

@@ -3,5 +3,5 @@ allowBuilds:
   sharp: true
 minimumReleaseAgeExclude:
   - astro@7.2.4
-  - '@sumaq/cms-schema@0.3.0'
-  - '@sumaq/site-kit@0.4.0'
+  - '@sumaq/cms-schema@0.3.0 || 0.3.1'
+  - '@sumaq/site-kit@0.4.0 || 0.4.1'
