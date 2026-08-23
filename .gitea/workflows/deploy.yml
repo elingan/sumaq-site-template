@@ -144,8 +144,15 @@ jobs:
           : "${BUNNY_STORAGE_PASSWORD:?falta el secreto de organización BUNNY_STORAGE_PASSWORD}"
           : "${BUNNY_STORAGE_ZONE:?falta la variable de organización BUNNY_STORAGE_ZONE}"
 
-          node --input-type=module - "$BUNNY_STORAGE_ZONE" \
-            "${BUNNY_STORAGE_HOST:-storage.bunnycdn.com}" "$DOMAIN" <<'PUBLICAR'
+          # El host se compone como https://<host>/..., así que con el esquema
+          # dentro saldría https://https://storage.bunnycdn.com/... y fallaría
+          # cada subida. Es fácil de teclear así —el panel de Bunny enseña la URL
+          # entera— y el error que da no señala a la variable, así que se limpia.
+          host="${BUNNY_STORAGE_HOST:-storage.bunnycdn.com}"
+          host="${host#*://}"
+          host="${host%%/*}"
+
+          node --input-type=module - "$BUNNY_STORAGE_ZONE" "$host" "$DOMAIN" <<'PUBLICAR'
           import { readdir, readFile } from 'node:fs/promises';
           import { join } from 'node:path';
 
