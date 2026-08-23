@@ -6,11 +6,16 @@
 # la plantilla es GitHub, y allí este workflow intentaría ejecutarse en cada push
 # contra un runner que no existe.
 #
-# Lo que cambia lo dicen tres variables de Actions, y el nivel al que vive cada
+# Lo que cambia lo dicen cinco variables de Actions, y el nivel al que vive cada
 # una no es un detalle: describe a qué pertenece el dato.
 #
 #   SITE_DEPLOY_TARGET   (organización) docroot (lab, Caddy) · bunny (kallpa-server).
 #                        Describe el entorno, así que es común a los ~100 repos.
+#   BUNNY_STORAGE_ZONE   (organización) nombre de la Storage Zone común. Una sola
+#                        para toda la flota, con una carpeta por sitio.
+#   BUNNY_STORAGE_HOST   (organización) endpoint de almacenamiento de la región de
+#                        la zona. Frankfurt es storage.bunnycdn.com; las demás
+#                        llevan prefijo (ny., la., …) y subir al que no es da 401.
 #   SITE_DOMAIN          (repo) dominio real del sitio. Lo escribe sumaq-app al
 #                        fijar el dominio. Sin ella se deriva del nombre del repo,
 #                        que solo acierta con dominios de dos etiquetas.
@@ -21,6 +26,11 @@
 #
 # Las dos de repo tienen que ser de repo: una URL pública identifica a un sitio, y
 # puesta en la organización le pondría a los ~100 el dominio del primero.
+#
+# Y un secreto de organización, `BUNNY_STORAGE_PASSWORD`: la contraseña de
+# ESCRITURA de la Storage Zone. Nunca la API key de cuenta —esa vive en sumaq-app
+# y puede crear zonas y certificados; esta solo escribe ficheros de sitio
+# (docs/bunny-cdn.md §4).
 #
 # Los dos runners responden a la misma label `sumaq-site`, porque no hay ninguna
 # instancia donde ambos sean candidatos: un repo del Gitea local solo puede
@@ -113,14 +123,126 @@ jobs:
           cp -a dist/. "/sites/${DOMAIN}/"
           echo "Publicado → http://${DOMAIN}.localhost:8080/"
 
-      # Producción: PUT a la Storage Zone y purga de la Pull Zone. La contraseña
-      # de escritura de la zona vive solo en los secretos del runner de
-      # kallpa-server, nunca la API key de cuenta.
+      # Producción: sincroniza dist/ contra la carpeta del sitio en la Storage Zone.
+      #
+      # NO purga la Pull Zone. La purga la hace sumaq-app cuando ve el run en
+      # `ready` (src/lib/server/cms/deploy.ts), que es quien tiene la API key de
+      # cuenta; el runner solo tiene la de escritura. Y purgar desde aquí sería
+      # además purgar demasiado pronto en cuanto un fichero fallase al subir.
       - name: Publicar en Bunny Storage
         if: env.DEPLOY_TARGET == 'bunny'
         env:
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_HOST: ${{ vars.BUNNY_STORAGE_HOST }}
           BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
         run: |
-          echo "Publicación en Bunny todavía sin implementar (docs/bunny-cdn.md §8)." >&2
-          echo "No se publica nada antes que exista: fallar es lo correcto aquí." >&2
-          exit 1
+          set -euo pipefail
+
+          # Sin estos dos no se puede publicar, y seguir dejaría el job en verde
+          # sin haber subido nada: el modo de fallo que este workflow evita en
+          # todas partes.
+          : "${BUNNY_STORAGE_PASSWORD:?falta el secreto de organización BUNNY_STORAGE_PASSWORD}"
+          : "${BUNNY_STORAGE_ZONE:?falta la variable de organización BUNNY_STORAGE_ZONE}"
+
+          node --input-type=module - "$BUNNY_STORAGE_ZONE" \
+            "${BUNNY_STORAGE_HOST:-storage.bunnycdn.com}" "$DOMAIN" <<'PUBLICAR'
+          import { readdir, readFile } from 'node:fs/promises';
+          import { join } from 'node:path';
+
+          const [zona, host, dominio] = process.argv.slice(2);
+          const clave = process.env.BUNNY_STORAGE_PASSWORD;
+          const base = `https://${host}/${zona}/${dominio}`;
+
+          const espera = (intento) => new Promise((r) => setTimeout(r, 500 * 2 ** intento));
+
+          // Bunny corta conexiones y devuelve 5xx bajo carga con normalidad, y un
+          // fallo transitorio en un fichero dejaría el sitio a medias. Un 4xx, en
+          // cambio, es configuración —clave, zona o endpoint— y no mejora
+          // esperando: ahí se falla de inmediato.
+          async function api(metodo, ruta, cuerpo) {
+            let ultimo;
+            for (let intento = 1; intento <= 4; intento++) {
+              let res;
+              try {
+                res = await fetch(`${base}${ruta}`, {
+                  method: metodo,
+                  headers: {
+                    AccessKey: clave,
+                    ...(cuerpo ? { 'Content-Type': 'application/octet-stream' } : {})
+                  },
+                  body: cuerpo
+                });
+              } catch (err) {
+                ultimo = err;
+                await espera(intento);
+                continue;
+              }
+              if (res.ok || res.status === 404) return res;
+              const texto = await res.text().catch(() => '');
+              const fallo = new Error(`${metodo} ${ruta} → ${res.status} ${texto}`);
+              if (res.status < 500) throw fallo;
+              ultimo = fallo;
+              await espera(intento);
+            }
+            throw ultimo;
+          }
+
+          async function locales(dir, prefijo = '') {
+            const salida = [];
+            for (const e of await readdir(dir, { withFileTypes: true })) {
+              const rel = prefijo ? `${prefijo}/${e.name}` : e.name;
+              if (e.isDirectory()) salida.push(...(await locales(join(dir, e.name), rel)));
+              else if (e.isFile()) salida.push(rel);
+            }
+            return salida;
+          }
+
+          // La API de Storage lista un directorio cada vez y exige la barra final.
+          async function remotos(prefijo = '') {
+            const res = await api('GET', `/${prefijo}`);
+            if (res.status === 404) return []; // primera publicación de este sitio
+            const salida = [];
+            for (const o of await res.json()) {
+              const rel = `${prefijo}${o.ObjectName}`;
+              if (o.IsDirectory) salida.push(...(await remotos(`${rel}/`)));
+              else salida.push(rel);
+            }
+            return salida;
+          }
+
+          // Concurrencia acotada: el runner tiene 4 GB y comparte máquina con
+          // Gitea. Sin límite, un sitio con cientos de assets abre cientos de
+          // sockets a la vez.
+          async function enLotes(items, n, fn) {
+            const cola = [...items];
+            await Promise.all(
+              Array.from({ length: Math.min(n, cola.length) }, async () => {
+                for (let it = cola.shift(); it !== undefined; it = cola.shift()) await fn(it);
+              })
+            );
+          }
+
+          // Un fallo aquí acaba en el log de un run, que es donde alguien lo va a
+          // leer con prisa. Una línea con el método, la ruta y el código dice qué
+          // pasa; un stack trace de undici, no.
+          try {
+            const antes = await remotos();
+            const ahora = await locales('dist');
+            if (ahora.length === 0) throw new Error('dist/ no tiene ficheros');
+
+            // Subir ANTES de borrar: si el job muere a medias, el sitio queda con
+            // ficheros de sobra, no de menos. Al revés se serviría un 404.
+            await enLotes(ahora, 8, async (rel) => api('PUT', `/${rel}`, await readFile(join('dist', rel))));
+            console.log(`Subidos ${ahora.length} ficheros a ${zona}/${dominio}`);
+
+            const sobrantes = antes.filter((rel) => !ahora.includes(rel));
+            await enLotes(sobrantes, 8, (rel) => api('DELETE', `/${rel}`));
+            if (sobrantes.length) console.log(`Borrados ${sobrantes.length} ficheros que ya no existían en dist/`);
+
+            console.log('Publicado en la Storage Zone. La purga de la Pull Zone la hace sumaq-app.');
+          } catch (err) {
+            console.error(`✗ No se pudo publicar en ${zona}/${dominio}: ${err instanceof Error ? err.message : err}`);
+            console.error('  401 = contraseña o endpoint de la zona; 404 en PUT = nombre de zona mal.');
+            process.exit(1);
+          }
+          PUBLICAR
