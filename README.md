@@ -69,7 +69,7 @@ que el runner no resuelve. Ver [`AGENTS.md`](AGENTS.md#versiones).
   hero.title             Titel is required
   contact.cards[0].phone Telefon is required
 
-  El sitio no se ha publicado. No se ha subido nada a Bunny.
+  El sitio no se ha publicado. No se ha subido nada al servidor.
 ```
 
 **Marca `required: true` en todo campo sin el cual la página queda rota.** Un schema sin
@@ -180,14 +180,21 @@ resuelve desde la raíz del proyecto que construye, no desde el paquete que lo d
 `pnpm build` genera `dist/`. Quien publica es
 [`.gitea/workflows/deploy.yml`](.gitea/workflows/deploy.yml), que **cada sitio hereda de
 aquí sin tocarlo**: no lleva el dominio ni la URL incrustados, así que el fichero es
-idéntico en los ~100 repos. Lo que cambia son tres variables de Actions, y el nivel al
+idéntico en los ~100 repos. Lo que cambia son unas variables de Actions, y el nivel al
 que vive cada una dice a qué pertenece el dato:
 
 | Variable | Nivel | Lab local | `kallpa-server` |
 | --- | --- | --- | --- |
-| `SITE_DEPLOY_TARGET` | organización | `docroot` — `cp` al docroot que sirve Caddy | `bunny` — `PUT` a la Storage Zone y purga |
+| `SITE_DEPLOY_TARGET` | organización | `docroot` — `cp` al docroot que sirve Caddy | `sites` — `rsync` a `/srv/sites/<dominio>/` |
 | `SITE_DOMAIN` | repo | sin valor: se deriva del nombre del repo | el dominio real del sitio, que escribe `sumaq-app` |
 | `SITE_URL` | repo | sin valor: se usa `http://<dominio>.localhost:8080` | la URL pública, que escribe `sumaq-app` |
+| `SITES_HOST` | organización | — | `sites@10.10.0.3` — el servidor que sirve los sitios, por el overlay |
+| `SITES_PORT` | organización | — | el puerto SSH del destino |
+
+`SITES_HOST` va en la organización y no incrustado en el workflow por un motivo concreto:
+las dos máquinas del par se turnan para sostener la IP pública, y al conmutar hay que
+cambiar **dónde publica el runner**. Con la variable es una línea en un sitio; incrustado
+serían ~100 repos.
 
 El destino es del **entorno**, así que una variable de organización lo describe bien. El
 dominio y la URL son del **sitio**: puestos en la organización le darían a los ~100 repos

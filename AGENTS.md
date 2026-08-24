@@ -98,7 +98,7 @@ tmp=$(mktemp -d) && cp package.json pnpm-workspace.yaml .node-version "$tmp/" \
 ## Despliegue
 
 Lo hace `.gitea/workflows/deploy.yml`, heredado sin cambios. El entorno lo dice
-`SITE_DEPLOY_TARGET`, variable de **organización** (`docroot` en el lab, `bunny` en
+`SITE_DEPLOY_TARGET`, variable de **organización** (`docroot` en el lab, `sites` en
 `kallpa-server`). El sitio lo dicen `SITE_DOMAIN` y `SITE_URL`, variables de **repo** que
 escribe `sumaq-app` al fijar el dominio; sin ellas el dominio se deriva del nombre del repo
 (`www-demo-graz-at` → `demo-graz.at`) y la URL cae a la del lab. Ambos runners responden a

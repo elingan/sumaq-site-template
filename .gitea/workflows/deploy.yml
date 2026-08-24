@@ -9,13 +9,15 @@
 # Lo que cambia lo dicen cinco variables de Actions, y el nivel al que vive cada
 # una no es un detalle: describe a qué pertenece el dato.
 #
-#   SITE_DEPLOY_TARGET   (organización) docroot (lab, Caddy) · bunny (kallpa-server).
+#   SITE_DEPLOY_TARGET   (organización) docroot (lab, Caddy) · sites (kallpa-server).
 #                        Describe el entorno, así que es común a los ~100 repos.
-#   BUNNY_STORAGE_ZONE   (organización) nombre de la Storage Zone común. Una sola
-#                        para toda la flota, con una carpeta por sitio.
-#   BUNNY_STORAGE_HOST   (organización) endpoint de almacenamiento de la región de
-#                        la zona. Frankfurt es storage.bunnycdn.com; las demás
-#                        llevan prefijo (ny., la., …) y subir al que no es da 401.
+#   SITES_HOST           (organización) dónde publicar: usuario@host del servidor
+#                        que sirve los sitios, por el overlay. Va en la
+#                        organización y NO incrustado aquí porque al conmutar
+#                        entre punku-a y punku-b hay que cambiarlo en un sitio,
+#                        no en ~100 repos.
+#   SITES_PORT           (organización) puerto SSH del destino. Los servidores no
+#                        escuchan en el 22.
 #   SITE_DOMAIN          (repo) dominio real del sitio. Lo escribe sumaq-app al
 #                        fijar el dominio. Sin ella se deriva del nombre del repo,
 #                        que solo acierta con dominios de dos etiquetas.
@@ -27,10 +29,10 @@
 # Las dos de repo tienen que ser de repo: una URL pública identifica a un sitio, y
 # puesta en la organización le pondría a los ~100 el dominio del primero.
 #
-# Y un secreto de organización, `BUNNY_STORAGE_PASSWORD`: la contraseña de
-# ESCRITURA de la Storage Zone. Nunca la API key de cuenta —esa vive en sumaq-app
-# y puede crear zonas y certificados; esta solo escribe ficheros de sitio
-# (docs/bunny-cdn.md §4).
+# Y un secreto de organización, `SITES_DEPLOY_KEY`: la clave SSH privada de
+# despliegue. Nunca una credencial de administración — al otro lado está
+# encerrada por `restrict` y `command="rrsync -wo /srv/sites"`, así que solo
+# puede escribir ficheros de sitio dentro de ese directorio y nada más.
 #
 # Los dos runners responden a la misma label `sumaq-site`, porque no hay ninguna
 # instancia donde ambos sean candidatos: un repo del Gitea local solo puede
@@ -87,7 +89,7 @@ jobs:
           # y el workflow acabaría en verde sin haber publicado nada.
           target="${TARGET_VAR:-docroot}"
           case "$target" in
-            docroot|bunny) ;;
+            docroot|sites) ;;
             *) echo "SITE_DEPLOY_TARGET no reconocido: '${target}'" >&2; exit 1 ;;
           esac
 
@@ -123,133 +125,47 @@ jobs:
           cp -a dist/. "/sites/${DOMAIN}/"
           echo "Publicado → http://${DOMAIN}.localhost:8080/"
 
-      # Producción: sincroniza dist/ contra la carpeta del sitio en la Storage Zone.
-      #
-      # NO purga la Pull Zone. La purga la hace sumaq-app cuando ve el run en
-      # `ready` (src/lib/server/cms/deploy.ts), que es quien tiene la API key de
-      # cuenta; el runner solo tiene la de escritura. Y purgar desde aquí sería
-      # además purgar demasiado pronto en cuanto un fichero fallase al subir.
-      - name: Publicar en Bunny Storage
-        if: env.DEPLOY_TARGET == 'bunny'
+      # Producción: sincroniza dist/ contra /srv/sites/<dominio>/ del servidor que
+      # sirve los sitios, por el overlay de WireGuard. El fichero en disco ES la
+      # verdad, así que aquí se acaba la publicación: no hay caché que purgar.
+      - name: Publicar en el servidor de sitios
+        if: env.DEPLOY_TARGET == 'sites'
         env:
-          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
-          BUNNY_STORAGE_HOST: ${{ vars.BUNNY_STORAGE_HOST }}
-          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+          SITES_HOST: ${{ vars.SITES_HOST }}
+          SITES_PORT: ${{ vars.SITES_PORT }}
+          SITES_DEPLOY_KEY: ${{ secrets.SITES_DEPLOY_KEY }}
         run: |
           set -euo pipefail
 
-          # Sin estos dos no se puede publicar, y seguir dejaría el job en verde
-          # sin haber subido nada: el modo de fallo que este workflow evita en
-          # todas partes.
-          : "${BUNNY_STORAGE_PASSWORD:?falta el secreto de organización BUNNY_STORAGE_PASSWORD}"
-          : "${BUNNY_STORAGE_ZONE:?falta la variable de organización BUNNY_STORAGE_ZONE}"
+          # Sin esto no se puede publicar, y seguir dejaría el job en verde sin
+          # haber subido nada: el modo de fallo que este workflow evita en todas
+          # partes.
+          : "${SITES_DEPLOY_KEY:?falta el secreto de organización SITES_DEPLOY_KEY}"
+          : "${SITES_HOST:?falta la variable de organización SITES_HOST}"
 
-          # El host se compone como https://<host>/..., así que con el esquema
-          # dentro saldría https://https://storage.bunnycdn.com/... y fallaría
-          # cada subida. Es fácil de teclear así —el panel de Bunny enseña la URL
-          # entera— y el error que da no señala a la variable, así que se limpia.
-          host="${BUNNY_STORAGE_HOST:-storage.bunnycdn.com}"
-          host="${host#*://}"
-          host="${host%%/*}"
+          # 🔴 node:24-bookworm trae ssh pero NO rsync — comprobado el 24 ago 2026.
+          # Sin esta línea el primer despliegue muere aquí. En el destino sí está.
+          if ! command -v rsync >/dev/null 2>&1; then
+            apt-get update -qq && apt-get install -y -qq rsync >/dev/null
+          fi
 
-          node --input-type=module - "$BUNNY_STORAGE_ZONE" "$host" "$DOMAIN" <<'PUBLICAR'
-          import { readdir, readFile } from 'node:fs/promises';
-          import { join } from 'node:path';
+          # La clave, solo para este job y solo legible por su dueño: ssh se niega
+          # a usar una clave privada que pueda leer alguien más.
+          clave="$(mktemp)"
+          trap 'rm -f "$clave"' EXIT
+          printf '%s\n' "$SITES_DEPLOY_KEY" > "$clave"
+          chmod 600 "$clave"
 
-          const [zona, host, dominio] = process.argv.slice(2);
-          const clave = process.env.BUNNY_STORAGE_PASSWORD;
-          const base = `https://${host}/${zona}/${dominio}`;
+          # -o: el destino ignora las opciones del cliente y aplica las suyas
+          # (`rrsync -wo`), así que estas son las que el servidor acepta. --mkpath
+          # crea la carpeta del sitio en la primera publicación.
+          #
+          # --delay-updates + --delete-after: los ficheros nuevos se dejan a un
+          # lado y se ponen todos de golpe al final, y lo que sobra se borra
+          # después. Así un job muerto a medias deja ficheros de más, nunca un
+          # 404 — al revés se serviría un sitio a medio borrar.
+          rsync -a --delete-after --delay-updates --mkpath \
+            -e "ssh -i $clave -p ${SITES_PORT:-22} -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+            dist/ "${SITES_HOST}:${DOMAIN}/"
 
-          const espera = (intento) => new Promise((r) => setTimeout(r, 500 * 2 ** intento));
-
-          // Bunny corta conexiones y devuelve 5xx bajo carga con normalidad, y un
-          // fallo transitorio en un fichero dejaría el sitio a medias. Un 4xx, en
-          // cambio, es configuración —clave, zona o endpoint— y no mejora
-          // esperando: ahí se falla de inmediato.
-          async function api(metodo, ruta, cuerpo) {
-            let ultimo;
-            for (let intento = 1; intento <= 4; intento++) {
-              let res;
-              try {
-                res = await fetch(`${base}${ruta}`, {
-                  method: metodo,
-                  headers: {
-                    AccessKey: clave,
-                    ...(cuerpo ? { 'Content-Type': 'application/octet-stream' } : {})
-                  },
-                  body: cuerpo
-                });
-              } catch (err) {
-                ultimo = err;
-                await espera(intento);
-                continue;
-              }
-              if (res.ok || res.status === 404) return res;
-              const texto = await res.text().catch(() => '');
-              const fallo = new Error(`${metodo} ${ruta} → ${res.status} ${texto}`);
-              if (res.status < 500) throw fallo;
-              ultimo = fallo;
-              await espera(intento);
-            }
-            throw ultimo;
-          }
-
-          async function locales(dir, prefijo = '') {
-            const salida = [];
-            for (const e of await readdir(dir, { withFileTypes: true })) {
-              const rel = prefijo ? `${prefijo}/${e.name}` : e.name;
-              if (e.isDirectory()) salida.push(...(await locales(join(dir, e.name), rel)));
-              else if (e.isFile()) salida.push(rel);
-            }
-            return salida;
-          }
-
-          // La API de Storage lista un directorio cada vez y exige la barra final.
-          async function remotos(prefijo = '') {
-            const res = await api('GET', `/${prefijo}`);
-            if (res.status === 404) return []; // primera publicación de este sitio
-            const salida = [];
-            for (const o of await res.json()) {
-              const rel = `${prefijo}${o.ObjectName}`;
-              if (o.IsDirectory) salida.push(...(await remotos(`${rel}/`)));
-              else salida.push(rel);
-            }
-            return salida;
-          }
-
-          // Concurrencia acotada: el runner tiene 4 GB y comparte máquina con
-          // Gitea. Sin límite, un sitio con cientos de assets abre cientos de
-          // sockets a la vez.
-          async function enLotes(items, n, fn) {
-            const cola = [...items];
-            await Promise.all(
-              Array.from({ length: Math.min(n, cola.length) }, async () => {
-                for (let it = cola.shift(); it !== undefined; it = cola.shift()) await fn(it);
-              })
-            );
-          }
-
-          // Un fallo aquí acaba en el log de un run, que es donde alguien lo va a
-          // leer con prisa. Una línea con el método, la ruta y el código dice qué
-          // pasa; un stack trace de undici, no.
-          try {
-            const antes = await remotos();
-            const ahora = await locales('dist');
-            if (ahora.length === 0) throw new Error('dist/ no tiene ficheros');
-
-            // Subir ANTES de borrar: si el job muere a medias, el sitio queda con
-            // ficheros de sobra, no de menos. Al revés se serviría un 404.
-            await enLotes(ahora, 8, async (rel) => api('PUT', `/${rel}`, await readFile(join('dist', rel))));
-            console.log(`Subidos ${ahora.length} ficheros a ${zona}/${dominio}`);
-
-            const sobrantes = antes.filter((rel) => !ahora.includes(rel));
-            await enLotes(sobrantes, 8, (rel) => api('DELETE', `/${rel}`));
-            if (sobrantes.length) console.log(`Borrados ${sobrantes.length} ficheros que ya no existían en dist/`);
-
-            console.log('Publicado en la Storage Zone. La purga de la Pull Zone la hace sumaq-app.');
-          } catch (err) {
-            console.error(`✗ No se pudo publicar en ${zona}/${dominio}: ${err instanceof Error ? err.message : err}`);
-            console.error('  401 = contraseña o endpoint de la zona; 404 en PUT = nombre de zona mal.');
-            process.exit(1);
-          }
-          PUBLICAR
+          echo "Publicado → https://${DOMAIN}/"
