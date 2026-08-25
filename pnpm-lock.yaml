@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@sumaq/site-kit':
-        specifier: 0.6.0
-        version: 0.6.0(astro@7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.3(@types/node@24.13.3))
+        specifier: 0.6.1
+        version: 0.6.1(astro@7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.3(@types/node@24.13.3))
       astro:
         specifier: 7.2.4
         version: 7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0)
@@ -670,8 +670,8 @@ packages:
     resolution: {integrity: sha512-EHN9JtGDePLInRPZu9qrL9xanJO467nZ4BlDPqCsQjDbKuAnW0fUNDGG3/LyZHKN8U2OmM37RfsNdlQHflXxPA==}
     engines: {node: '>=22.12.0'}
 
-  '@sumaq/site-kit@0.6.0':
-    resolution: {integrity: sha512-FWQNTCFHglWMvOwWRv4YSBvs7sI2N58fg9v3wgosD7HPDPsD8+xZSyoyKmCfGE2NBFYegykOwgUUFewAzs2JYA==}
+  '@sumaq/site-kit@0.6.1':
+    resolution: {integrity: sha512-jHIMzHhS6Bn+JVhF8efeTRp4P1VtKclkOKGCmrel7QUSD1hrama2zPm17UgbLBZEWQg82crMp9xyaEF5FZOyxg==}
     engines: {node: '>=22.12.0'}
     hasBin: true
     peerDependencies:
@@ -2074,7 +2074,7 @@ snapshots:
     dependencies:
       yaml: 2.9.0
 
-  '@sumaq/site-kit@0.6.0(astro@7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.3(@types/node@24.13.3))':
+  '@sumaq/site-kit@0.6.1(astro@7.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.3(@types/node@24.13.3))':
     dependencies:
       '@astrojs/sitemap': 3.7.3
       '@sumaq/cms-schema': 0.3.1
