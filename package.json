@@ -14,7 +14,7 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@sumaq/site-kit": "0.5.0",
+    "@sumaq/site-kit": "0.6.0",
     "astro": "7.2.4",
     "sharp": "0.35.3"
   },
