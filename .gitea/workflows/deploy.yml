@@ -6,7 +6,7 @@
 # la plantilla es GitHub, y allí este workflow intentaría ejecutarse en cada push
 # contra un runner que no existe.
 #
-# Lo que cambia lo dicen cinco variables de Actions, y el nivel al que vive cada
+# Lo que cambia lo dicen seis variables de Actions, y el nivel al que vive cada
 # una no es un detalle: describe a qué pertenece el dato.
 #
 #   SITE_DEPLOY_TARGET   (organización) docroot (lab, Caddy) · sites (kallpa-server).
@@ -18,16 +18,23 @@
 #                        no en ~100 repos.
 #   SITES_PORT           (organización) puerto SSH del destino. Los servidores no
 #                        escuchan en el 22.
+#   SITE_SLUG            (repo) identificador del sitio en sumaq-app. Es la que
+#                        habilita el workflow: sin ella no se construye nada (ver
+#                        el `if:` del job). La escribe sumaq-app al enlazar el
+#                        repo con el sitio, y en el lab la escribe seed.sh.
 #   SITE_DOMAIN          (repo) dominio real del sitio. Lo escribe sumaq-app al
-#                        fijar el dominio. Sin ella se deriva del nombre del repo,
-#                        que solo acierta con dominios de dos etiquetas.
+#                        fijar el dominio. Sin ella se deriva del slug (el último
+#                        guion pasa a punto), que solo acierta con dominios de dos
+#                        etiquetas.
 #   SITE_URL             (repo) URL pública; alimenta `site:` en Astro y de ahí
 #                        sitemap y canonical. También la escribe sumaq-app. Sin
-#                        ella se usa la del lab, para que el sitemap apunte a
-#                        donde el sitio se sirve de verdad en vez de a example.com.
+#                        ella: en el lab cae a http://<slug>.preview.localhost:8080
+#                        y en producción a https://<dominio>/, para que el sitemap
+#                        apunte a donde el sitio se sirve de verdad y no a
+#                        example.com.
 #
-# Las dos de repo tienen que ser de repo: una URL pública identifica a un sitio, y
-# puesta en la organización le pondría a los ~100 el dominio del primero.
+# Las tres de repo tienen que ser de repo: identifican a un sitio concreto, y
+# puestas en la organización le pondrían a los ~100 los datos del primero.
 #
 # Y un secreto de organización, `SITES_DEPLOY_KEY`: la clave SSH privada de
 # despliegue. Nunca una credencial de administración — al otro lado está
@@ -47,6 +54,17 @@ on:
 
 jobs:
   build-and-deploy:
+    # Un repo sin SITE_SLUG todavía no es el sitio de nadie. Así nace: sumaq-app
+    # lo genera desde la plantilla —lo que ya produce un push a main— y solo
+    # después escribe las variables. Ese primer push no tiene dónde publicar, y
+    # antes se resolvía derivando el slug del nombre del repo: un nombre elegido a
+    # mano decidía el host del preview, y con renombrar el repo el sitio se movía
+    # de sitio sin que sumaq-app se enterara.
+    #
+    # De ahí que el slug lo mande la app y solo la app. Mientras no lo haya, el
+    # job entero se salta: la ejecución sale en verde sin pasos, que es lo honesto
+    # —no había nada que publicar— y no deja un build huérfano en el docroot.
+    if: vars.SITE_SLUG != ''
     runs-on: sumaq-site
     steps:
       - name: Checkout
@@ -55,30 +73,42 @@ jobs:
       - name: Habilitar pnpm
         run: corepack enable
 
-      # El dominio lo manda sumaq-app en SITE_DOMAIN. Sin ella se deriva del nombre
-      # del repo con la convención de local-server/seed.sh —se quita el prefijo www-
-      # y el último guion pasa a ser el punto del TLD, www-demo-graz-at → demo-graz.at—,
-      # que es exacta para el lab y para cualquier dominio de dos etiquetas, y falsa
-      # para un .co.uk o un subdominio. De ahí que la variable gane.
-      - name: Resolver dominio y destino
+      # El slug identifica al sitio y no cambia entre entornos: en producción se
+      # sirve en <slug>.preview.sumaq.site y en el lab en <slug>.preview.localhost,
+      # ambos en la raíz del host. Es el mismo valor que sumaq-app pone delante de
+      # `.preview.` al enseñar el enlace en el CMS, así que tiene que venir de la
+      # app —no derivarse aquí— o los dos dirían cosas distintas.
+      #
+      # El dominio real también lo manda sumaq-app en SITE_DOMAIN; sin ella se
+      # deriva del slug (el último guion pasa a punto, elingan-dev → elingan.dev),
+      # que solo acierta con dominios de dos etiquetas. De ahí que la variable gane.
+      - name: Resolver slug, dominio y destino
         env:
-          REPO: ${{ gitea.repository }}
+          SLUG_VAR: ${{ vars.SITE_SLUG }}
           DOMAIN_VAR: ${{ vars.SITE_DOMAIN }}
           SITE_URL_VAR: ${{ vars.SITE_URL }}
           TARGET_VAR: ${{ vars.SITE_DEPLOY_TARGET }}
         run: |
           set -euo pipefail
+          slug="${SLUG_VAR}"
           domain="${DOMAIN_VAR:-}"
           if [[ -z "$domain" ]]; then
-            name="${REPO##*/}"
-            name="${name#www-}"
-            domain="${name%-*}.${name##*-}"
+            domain="${slug%-*}.${slug##*-}"
           fi
 
-          # El dominio acaba en un path del docroot y en el `find -delete` que lo
-          # vacía. Una variable de Actions la escribe una persona o la app, no el
-          # repo, así que se comprueba que sea un dominio antes de dejarla entrar
-          # en un borrado: con una barra o un `..` el borrado saldría del sitio.
+          # El slug acaba en un path del docroot y en el `find -delete` que lo
+          # vacía. El `if:` del job solo garantiza que no esté vacía, no que valga:
+          # es una variable de Actions, la escribe la app o una persona. Es una
+          # etiqueta única: con una barra o un `..` el borrado saldría del sitio, y
+          # con un punto dejaría de casar con *.preview.localhost.
+          if ! [[ "$slug" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]]; then
+            echo "SITE_SLUG inválido: '${slug}'" >&2
+            exit 1
+          fi
+
+          # El dominio también acaba en un path del docroot (producción). Una
+          # variable de Actions la escribe una persona o la app, no el repo, así que
+          # se comprueba que sea un dominio antes de dejarla entrar en un borrado.
           if ! [[ "$domain" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
             echo "Dominio inválido: '${domain}'" >&2
             exit 1
@@ -93,13 +123,23 @@ jobs:
             *) echo "SITE_DEPLOY_TARGET no reconocido: '${target}'" >&2; exit 1 ;;
           esac
 
+          url="${SITE_URL_VAR:-}"
+          if [[ -z "$url" ]]; then
+            if [[ "$target" == "docroot" ]]; then
+              url="http://${slug}.preview.localhost:8080"
+            else
+              url="https://${domain}/"
+            fi
+          fi
+
           {
+            echo "SLUG=${slug}"
             echo "DOMAIN=${domain}"
             echo "DEPLOY_TARGET=${target}"
-            echo "SITE_URL=${SITE_URL_VAR:-http://${domain}.localhost:8080}"
+            echo "SITE_URL=${url}"
           } >> "$GITHUB_ENV"
 
-          echo "Dominio ${domain} · destino ${target}"
+          echo "Slug ${slug} · dominio ${domain} · destino ${target}"
 
       - name: Instalar
         run: pnpm install --frozen-lockfile
@@ -119,11 +159,11 @@ jobs:
         if: env.DEPLOY_TARGET == 'docroot'
         run: |
           set -euo pipefail
-          mkdir -p "/sites/${DOMAIN}"
+          mkdir -p "/sites/${SLUG}"
           # rsync no viene en node:24-bookworm; cp -a basta
-          find "/sites/${DOMAIN}" -mindepth 1 -delete
-          cp -a dist/. "/sites/${DOMAIN}/"
-          echo "Publicado → http://${DOMAIN}.localhost:8080/"
+          find "/sites/${SLUG}" -mindepth 1 -delete
+          cp -a dist/. "/sites/${SLUG}/"
+          echo "Publicado → http://${SLUG}.preview.localhost:8080/"
 
       # Producción: sincroniza dist/ contra /srv/sites/<dominio>/ del servidor que
       # sirve los sitios, por el overlay de WireGuard. El fichero en disco ES la
