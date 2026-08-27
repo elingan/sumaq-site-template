@@ -14,12 +14,12 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@sumaq/site-kit": "0.6.1",
+    "@sumaq/site-kit": "0.7.0",
     "astro": "7.2.4",
     "sharp": "0.35.3"
   },
   "devDependencies": {
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "vite-plugin-devtools-json": "1.1.0",
     "vite-plugin-qrcode": "0.4.1"
   }
