@@ -6,7 +6,7 @@
 # la plantilla es GitHub, y allí este workflow intentaría ejecutarse en cada push
 # contra un runner que no existe.
 #
-# Lo que cambia lo dicen seis variables de Actions, y el nivel al que vive cada
+# Lo que cambia lo dicen siete variables de Actions, y el nivel al que vive cada
 # una no es un detalle: describe a qué pertenece el dato.
 #
 #   SITE_DEPLOY_TARGET   (organización) docroot (lab, Caddy) · sites (kallpa-server).
@@ -32,8 +32,12 @@
 #                        y en producción a https://<dominio>/, para que el sitemap
 #                        apunte a donde el sitio se sirve de verdad y no a
 #                        example.com.
+#   SITE_REDIRECTS       (repo) dominios comprados aparte que solo redirigen al
+#                        canónico, en la forma `dominio=ruta` separados por `;`.
+#                        La escribe sumaq-app, y la mayoría de sitios no la tiene.
+#                        Sin ella el paso de redirecciones no se ejecuta.
 #
-# Las tres de repo tienen que ser de repo: identifican a un sitio concreto, y
+# Las cuatro de repo tienen que ser de repo: identifican a un sitio concreto, y
 # puestas en la organización le pondrían a los ~100 los datos del primero.
 #
 # Y un secreto de organización, `SITES_DEPLOY_KEY`: la clave SSH privada de
@@ -209,3 +213,103 @@ jobs:
             dist/ "${SITES_HOST}:${DOMAIN}/"
 
           echo "Publicado → https://${DOMAIN}/"
+
+      # Los dominios que el cliente compró aparte y que solo llevan al canónico:
+      # unos a la portada, otros a una página concreta.
+      #
+      # 🔑 En el servidor de sitios, un hostname ES una carpeta: existir es todo
+      # lo que hace falta para que Caddy le emita el certificado —su endpoint
+      # `ask` autoriza justo eso— y lo sirva. Así que dar de alta un dominio de
+      # redirección es publicar una carpeta con tres ficheros, sin tocar la
+      # configuración del servidor ni recargar nada.
+      #
+      #   _redirect   la URL destino en texto plano. Es lo que lee Caddy para
+      #               devolver un 301 de verdad.
+      #   index.html  meta-refresh instantáneo + canonical. Es lo que hace que el
+      #               dominio funcione aunque el 301 del borde no esté todavía.
+      #   404.html    el mismo contenido, para que CUALQUIER ruta del dominio
+      #               extra acabe redirigiendo y no solo «/».
+      #
+      # No se borra nada al quitar un dominio: la clave de despliegue es de
+      # escritura y no sabe qué se quitó. La limpieza es manual, y está en el
+      # runbook.
+      - name: Publicar los dominios que redirigen
+        if: env.DEPLOY_TARGET == 'sites' && vars.SITE_REDIRECTS != ''
+        env:
+          SITES_HOST: ${{ vars.SITES_HOST }}
+          SITES_PORT: ${{ vars.SITES_PORT }}
+          SITES_DEPLOY_KEY: ${{ secrets.SITES_DEPLOY_KEY }}
+          REDIRECTS: ${{ vars.SITE_REDIRECTS }}
+        run: |
+          set -euo pipefail
+
+          : "${SITES_DEPLOY_KEY:?falta el secreto de organización SITES_DEPLOY_KEY}"
+          : "${SITES_HOST:?falta la variable de organización SITES_HOST}"
+
+          if ! command -v rsync >/dev/null 2>&1; then
+            apt-get update -qq && apt-get install -y -qq rsync >/dev/null
+          fi
+
+          clave="$(mktemp)"
+          trap 'rm -f "$clave"' EXIT
+          printf '%s\n' "$SITES_DEPLOY_KEY" > "$clave"
+          chmod 600 "$clave"
+
+          # Escapa lo que va dentro del HTML. El destino sale de una variable de
+          # Actions: la escribe la app, pero esto acaba en una página servida bajo
+          # el dominio del cliente y no se mete sin sanear.
+          escapar() {
+            printf '%s' "$1" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g'
+          }
+
+          IFS=';' read -ra entradas <<< "$REDIRECTS"
+          for entrada in "${entradas[@]}"; do
+            if [[ -z "$entrada" ]]; then continue; fi
+            dom="${entrada%%=*}"
+            ruta="${entrada#*=}"
+            # Una entrada sin `=` deja `ruta` igual a `dom`: es la portada.
+            if [[ -z "$ruta" || "$ruta" == "$dom" ]]; then ruta="/"; fi
+
+            # El dominio acaba en un path del docroot, igual que DOMAIN: misma
+            # comprobación, por el mismo motivo.
+            if ! [[ "$dom" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+              echo "Dominio de redirección inválido: '${dom}'" >&2
+              exit 1
+            fi
+            # Y la ruta acaba en una cabecera Location: tiene que ser del propio
+            # sitio, no otro host.
+            if [[ "$ruta" != /* || "$ruta" == //* || "$ruta" == *..* ]]; then
+              echo "Ruta de redirección inválida para ${dom}: '${ruta}'" >&2
+              exit 1
+            fi
+
+            destino="https://${DOMAIN}${ruta}"
+            destino_html="$(escapar "$destino")"
+
+            carpeta="$(mktemp -d)"
+            printf '%s\n' "$destino" > "${carpeta}/_redirect"
+
+            cat > "${carpeta}/index.html" <<HTML
+          <!doctype html>
+          <html lang="de">
+          <head>
+          <meta charset="utf-8">
+          <title>${destino_html}</title>
+          <meta http-equiv="refresh" content="0; url=${destino_html}">
+          <link rel="canonical" href="${destino_html}">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          </head>
+          <body>
+          <p><a href="${destino_html}">${destino_html}</a></p>
+          </body>
+          </html>
+          HTML
+            cp "${carpeta}/index.html" "${carpeta}/404.html"
+
+            rsync -a --delete-after --delay-updates --mkpath \
+              -e "ssh -i $clave -p ${SITES_PORT:-22} -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+              "${carpeta}/" "${SITES_HOST}:${dom}/"
+
+            rm -rf "$carpeta"
+            echo "Redirección → https://${dom}/ lleva a ${destino}"
+          done
