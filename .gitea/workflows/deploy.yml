@@ -145,6 +145,37 @@ jobs:
 
           echo "Slug ${slug} · dominio ${domain} · destino ${target}"
 
+      # act_runner levanta un contenedor node:24-bookworm nuevo por cada job
+      # (docs/bitacora.md, 23 ago 2026): sin esto, cada push reinstala
+      # dependencias y reprocesa TODAS las imágenes desde cero, aunque no
+      # hayan cambiado. `pnpm store path` necesita pnpm ya activado por
+      # corepack, así que va después de "Habilitar pnpm".
+      - name: Resolver ruta del store de pnpm
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cachear el store de pnpm
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-
+
+      # Astro ya cachea cada imagen transformada en node_modules/.astro/assets/
+      # y la reutiliza si no cambió (astro/dist/assets/build/generate.js, sin
+      # flag experimental) — pero esa caché nace y muere con el contenedor si
+      # no se persiste aquí. No hay lockfile que invalide "una imagen cambió",
+      # así que la clave es única por ejecución y restore-keys trae la más
+      # reciente: es una caché acumulativa, no de coincidencia exacta.
+      - name: Cachear las imágenes ya procesadas por Astro
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.astro
+          key: astro-build-cache-${{ github.run_id }}
+          restore-keys: |
+            astro-build-cache-
+
       - name: Instalar
         run: pnpm install --frozen-lockfile
 
