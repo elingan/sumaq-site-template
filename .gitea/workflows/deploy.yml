@@ -154,6 +154,10 @@ jobs:
         id: pnpm-store
         run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
+      # Aquí el prefijo SÍ es común a todos los repos, al revés que en la caché
+      # de abajo: el store de pnpm es direccionable por contenido, así que
+      # heredar el de otro sitio es seguro y además acierta casi siempre —los
+      # ~100 sitios comparten site-kit y Astro.
       - name: Cachear el store de pnpm
         uses: actions/cache@v4
         with:
@@ -168,13 +172,19 @@ jobs:
       # no se persiste aquí. No hay lockfile que invalide "una imagen cambió",
       # así que la clave es única por ejecución y restore-keys trae la más
       # reciente: es una caché acumulativa, no de coincidencia exacta.
+      #
+      # 🔴 El nombre del repo va DENTRO de la clave: el servidor de caché de
+      # act_runner es uno solo para toda la instancia, así que un prefijo sin
+      # repo hace que un sitio restaure el node_modules/.astro de otro. Ahí
+      # dentro va estado propio del sitio (colecciones de contenido, settings),
+      # no solo imágenes.
       - name: Cachear las imágenes ya procesadas por Astro
         uses: actions/cache@v4
         with:
           path: node_modules/.astro
-          key: astro-build-cache-${{ github.run_id }}
+          key: astro-build-cache-${{ github.repository }}-${{ github.run_id }}
           restore-keys: |
-            astro-build-cache-
+            astro-build-cache-${{ github.repository }}-
 
       - name: Instalar
         run: pnpm install --frozen-lockfile
