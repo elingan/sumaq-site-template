@@ -6,7 +6,7 @@
 # la plantilla es GitHub, y allí este workflow intentaría ejecutarse en cada push
 # contra un runner que no existe.
 #
-# Lo que cambia lo dicen nueve variables de Actions, y el nivel al que vive cada
+# Lo que cambia lo dicen once variables de Actions, y el nivel al que vive cada
 # una no es un detalle: describe a qué pertenece el dato.
 #
 #   SITE_DEPLOY_TARGET   (organización) docroot (lab, Caddy) · sites (kallpa-server).
@@ -32,6 +32,16 @@
 #                        y en producción a https://<dominio>/, para que el sitemap
 #                        apunte a donde el sitio se sirve de verdad y no a
 #                        example.com.
+#   SITE_LOCALE          (repo) idioma por defecto del sitio: el que se sirve SIN
+#                        prefijo en la URL. Lo escribe sumaq-app al crear el sitio
+#                        y no cambia después, porque sus datos viven en la raíz de
+#                        content/. Sin ella se construye en alemán, que es el
+#                        mercado.
+#   SITE_LOCALES         (repo) los idiomas añadidos, separados por `;`. Cada uno
+#                        se sirve bajo su prefijo (/en/) y lee sus datos de
+#                        content/<idioma>/. La escribe sumaq-app y la inmensa
+#                        mayoría de sitios NO la tiene: sin ella el sitio es
+#                        monolingüe y se construye exactamente como siempre.
 #   SITE_REDIRECTS       (repo) dominios comprados aparte que solo redirigen al
 #                        canónico, en la forma `dominio=ruta` separados por `;`.
 #                        La escribe sumaq-app, y la mayoría de sitios no la tiene.
@@ -52,7 +62,7 @@
 #                        es opt-in por sitio. Así el sitio de demostración no
 #                        contamina las métricas de nadie.
 #
-# Las cinco de repo tienen que ser de repo: identifican a un sitio concreto, y
+# Las de repo tienen que ser de repo: identifican a un sitio concreto, y
 # puestas en la organización le pondrían a los ~100 los datos del primero.
 #
 # Y un secreto de organización, `SITES_DEPLOY_KEY`: la clave SSH privada de
@@ -107,6 +117,8 @@ jobs:
           DOMAIN_VAR: ${{ vars.SITE_DOMAIN }}
           SITE_URL_VAR: ${{ vars.SITE_URL }}
           TARGET_VAR: ${{ vars.SITE_DEPLOY_TARGET }}
+          LOCALE_VAR: ${{ vars.SITE_LOCALE }}
+          LOCALES_VAR: ${{ vars.SITE_LOCALES }}
         run: |
           set -euo pipefail
           slug="${SLUG_VAR}"
@@ -151,14 +163,38 @@ jobs:
             fi
           fi
 
+          # Los idiomas acaban siendo carpetas de `content/` y segmentos de URL, y
+          # como todo lo demás aquí los escribe una variable de Actions: se
+          # comprueban antes de dejarlos entrar. Un código inventado no rompería el
+          # build, haría algo peor — publicar rutas que no lleva nadie.
+          locale="${LOCALE_VAR:-de}"
+          if ! [[ "$locale" =~ ^[a-z]{2}$ ]]; then
+            echo "SITE_LOCALE inválido: '${locale}'" >&2
+            exit 1
+          fi
+
+          locales="${LOCALES_VAR:-}"
+          if [[ -n "$locales" ]]; then
+            IFS=';' read -ra extra <<< "$locales"
+            for l in "${extra[@]}"; do
+              [[ -z "$l" ]] && continue
+              if ! [[ "$l" =~ ^[a-z]{2}$ ]]; then
+                echo "SITE_LOCALES contiene un idioma inválido: '${l}'" >&2
+                exit 1
+              fi
+            done
+          fi
+
           {
             echo "SLUG=${slug}"
             echo "DOMAIN=${domain}"
             echo "DEPLOY_TARGET=${target}"
             echo "SITE_URL=${url}"
+            echo "SITE_LOCALE=${locale}"
+            echo "SITE_LOCALES=${locales}"
           } >> "$GITHUB_ENV"
 
-          echo "Slug ${slug} · dominio ${domain} · destino ${target}"
+          echo "Slug ${slug} · dominio ${domain} · destino ${target} · idioma ${locale}${locales:+ (+${locales})}"
 
       # act_runner levanta un contenedor node:24-bookworm nuevo por cada job
       # (docs/bitacora.md, 23 ago 2026): sin esto, cada push reinstala
@@ -205,7 +241,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Falla si content/*.json no cumple schema/*.yaml — la puerta que impide
-      # publicar un sitio roto. SITE_URL viene del paso anterior.
+      # publicar un sitio roto. SITE_URL, SITE_LOCALE y SITE_LOCALES vienen del
+      # paso anterior, ya validadas.
       #
       # Las dos PUBLIC_NAHUI_* las lee el layout del kit en su frontmatter con
       # `process.env`. La salida es estática, así que el valor se hornea en el
