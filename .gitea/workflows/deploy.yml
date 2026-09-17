@@ -6,7 +6,7 @@
 # la plantilla es GitHub, y allí este workflow intentaría ejecutarse en cada push
 # contra un runner que no existe.
 #
-# Lo que cambia lo dicen siete variables de Actions, y el nivel al que vive cada
+# Lo que cambia lo dicen nueve variables de Actions, y el nivel al que vive cada
 # una no es un detalle: describe a qué pertenece el dato.
 #
 #   SITE_DEPLOY_TARGET   (organización) docroot (lab, Caddy) · sites (kallpa-server).
@@ -36,8 +36,23 @@
 #                        canónico, en la forma `dominio=ruta` separados por `;`.
 #                        La escribe sumaq-app, y la mayoría de sitios no la tiene.
 #                        Sin ella el paso de redirecciones no se ejecuta.
+#   SITE_ANALYTICS_ORIGIN (organización) origen del tracker de Ñahui:
+#                        https://analytics.elingan.dev en producción,
+#                        http://localhost:5188 contra una Ñahui de desarrollo.
+#                        Describe el entorno —igual que SITE_DEPLOY_TARGET— así
+#                        que es común a los ~100. Sin ella el sitio cae al
+#                        tracker de producción.
+#   SITE_ANALYTICS_KEY   (repo) la `public_key` que Ñahui asigna a ESTE sitio, y
+#                        que viaja en el atributo `data-site` del <script>. No es
+#                        un secreto: va en el HTML público de todas las páginas.
+#                        La defensa de la ingesta es la comprobación de `Origin`
+#                        contra el dominio dado de alta, el límite de tasa y la
+#                        validación del payload, no esta clave.
+#                        🔑 Sin ella NO se emite ninguna etiqueta: la analítica
+#                        es opt-in por sitio. Así el sitio de demostración no
+#                        contamina las métricas de nadie.
 #
-# Las cuatro de repo tienen que ser de repo: identifican a un sitio concreto, y
+# Las cinco de repo tienen que ser de repo: identifican a un sitio concreto, y
 # puestas en la organización le pondrían a los ~100 los datos del primero.
 #
 # Y un secreto de organización, `SITES_DEPLOY_KEY`: la clave SSH privada de
@@ -191,7 +206,17 @@ jobs:
 
       # Falla si content/*.json no cumple schema/*.yaml — la puerta que impide
       # publicar un sitio roto. SITE_URL viene del paso anterior.
+      #
+      # Las dos PUBLIC_NAHUI_* las lee el layout del kit en su frontmatter con
+      # `process.env`. La salida es estática, así que el valor se hornea en el
+      # HTML durante el build: no hay capa de ejecución donde inyectarlo después.
+      # El prefijo PUBLIC_ no lo exige Astro aquí —sería necesario solo para
+      # leerlas desde un <script> de cliente con import.meta.env— pero se
+      # mantiene porque dice a las claras que el valor acaba siendo público.
       - name: Build Astro
+        env:
+          PUBLIC_NAHUI_SITE: ${{ vars.SITE_ANALYTICS_KEY }}
+          PUBLIC_NAHUI_ORIGIN: ${{ vars.SITE_ANALYTICS_ORIGIN }}
         run: pnpm build
 
       - name: Comprobar que hay build
