@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@sumaq/site-kit':
-        specifier: 0.13.0
-        version: 0.13.0(astro@7.3.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.4(@types/node@24.13.3))
+        specifier: 1.0.1
+        version: 1.0.1(astro@7.3.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.4(@types/node@24.13.3))
       astro:
         specifier: 7.3.3
         version: 7.3.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0)
@@ -683,8 +683,8 @@ packages:
     resolution: {integrity: sha512-koBTATAO8U7Uukd9AoCER8afEItYq7sySq+SKgKSvRZHegqPwvjJeHXFNNXjryMeP+P/WSuQHMG89Oct5IK87w==}
     engines: {node: '>=24'}
 
-  '@sumaq/site-kit@0.13.0':
-    resolution: {integrity: sha512-DH/Z550QEh6Icj4Wn4t+H4e9B71PAE9Olepg7YBkupDSphEa6at1lXiF+kIXY3nn5cyp01z51kUp/dGtpCI5ag==}
+  '@sumaq/site-kit@1.0.1':
+    resolution: {integrity: sha512-mHj74C73VNHB9Uu38CnJnNY0ihVDxKewOrUjT5uGxs6m92dg3xb9v8VfbB8g1UOKl5m7Pmlpo5HnrGNNtPTeOA==}
     engines: {node: '>=24'}
     hasBin: true
     peerDependencies:
@@ -1467,9 +1467,6 @@ packages:
     resolution: {integrity: sha512-4LCcse/U2MHZ63HAJVE+v71o7yOdIe4cZ70Wpf8D/IyjDKYQLV5GD46B+hSTjJsvV5PztjvHoU580EftxjDZFQ==}
     engines: {node: '>=12.20'}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
-
   zod@4.6.5:
     resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
@@ -1562,7 +1559,7 @@ snapshots:
     dependencies:
       sitemap: 9.0.1
       stream-replace-string: 2.0.0
-      zod: 4.4.3
+      zod: 4.6.5
 
   '@astrojs/telemetry@3.3.3':
     dependencies:
@@ -1947,7 +1944,7 @@ snapshots:
     dependencies:
       yaml: 2.9.0
 
-  '@sumaq/site-kit@0.13.0(astro@7.3.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.4(@types/node@24.13.3))':
+  '@sumaq/site-kit@1.0.1(astro@7.3.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(yaml@2.9.0))(sharp@0.35.4(@types/node@24.13.3))':
     dependencies:
       '@astrojs/sitemap': 3.7.3
       '@sumaq/cms-schema': 0.7.0
@@ -2747,8 +2744,6 @@ snapshots:
   yargs-parser@22.0.0: {}
 
   yocto-queue@1.2.2: {}
-
-  zod@4.4.3: {}
 
   zod@4.6.5: {}
 

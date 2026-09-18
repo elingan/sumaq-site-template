@@ -1,0 +1,54 @@
+---
+/**
+ * Personas de contacto. Sección de este sitio: la cabecera es la del kit, y
+ * cada tarjeta, marcado propio con `Text` y `ContactLinks` (que se ocupa de
+ * `mailto:` y del `tel:` internacional).
+ */
+import { Section, SectionHeader, Text, Heading, ContactLinks, cmsKey, hasText, list } from "@sumaq/site-kit";
+import type { BlockProps } from "@sumaq/site-kit/types";
+
+interface Props extends BlockProps {
+	cards?: { email?: string; name?: string; phone?: string; role?: string }[];
+}
+
+const {
+	sectionLabel,
+	sectionTitle,
+	sectionTitleAccent,
+	sectionSubtitle,
+	cards = [],
+	section = "contact",
+	layout,
+	density,
+	variant = "muted",
+	id = "contact",
+} = Astro.props;
+
+const cms = section;
+const people = list<any>(cards).filter(
+	(card) => hasText(card.name) || hasText(card.email) || hasText(card.phone),
+);
+---
+
+<Section layout={layout} density={density} name="contact" variant={variant} id={id} cms={cms}>
+	<SectionHeader
+		label={sectionLabel}
+		title={sectionTitle}
+		titleAccent={sectionTitleAccent}
+		lede={sectionSubtitle}
+		cms={cms}
+	/>
+	{
+		people.length > 0 && (
+			<div class:list={["sq-contact__grid", people.length === 1 && "sq-contact__grid--single"]}>
+				{people.map((card: any, i: number) => (
+					<article class="sq-contact__card">
+						<Heading as="h3" title={card.name} cms={cmsKey(cms, "cards", i, "name")} />
+						<Text class="sq-contact__role" text={card.role} cms={cmsKey(cms, "cards", i, "role")} />
+						<ContactLinks as="none" email={card.email} phone={card.phone} cms={cmsKey(cms, "cards", i)} />
+					</article>
+				))}
+			</div>
+		)
+	}
+</Section>

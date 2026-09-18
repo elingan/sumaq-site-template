@@ -1,0 +1,82 @@
+---
+/**
+ * Apertura de la página. Sección de este sitio, compuesta con átomos del kit:
+ * cámbiale el marcado o las clases cuando el diseño lo pida.
+ *
+ * `base={false}`: la apertura marca su propio ritmo vertical en `site.css`, sin
+ * el padding de `sq-section`.
+ */
+import { Section, Media, Text, Heading, Actions, DataList, cmsKey, hasImage, hasText } from "@sumaq/site-kit";
+import type { BlockProps, Cta, MediaRef } from "@sumaq/site-kit/types";
+
+interface Props extends BlockProps {
+	eyebrow?: string;
+	title?: string;
+	titleAccent?: string;
+	image?: MediaRef;
+	ctas?: Cta[];
+	stats?: { label?: string; value?: string }[];
+}
+
+const {
+	eyebrow,
+	title,
+	titleAccent,
+	image,
+	sectionSubtitle,
+	ctas = [],
+	stats = [],
+	section = "hero",
+	layout,
+	density,
+	variant,
+	id,
+} = Astro.props;
+
+const cms = section;
+const hasTitle = hasText(title) || hasText(titleAccent);
+---
+
+<Section
+	layout={layout}
+	density={density}
+	name="hero"
+	base={false}
+	variant={variant}
+	id={id}
+	labelledby={hasTitle ? "hero-title" : undefined}
+	cms={cms}
+	container="none"
+>
+	{
+		hasImage(image) && (
+			<div class="sq-hero__media" aria-hidden="true">
+				<Media
+					src={image}
+					alt=""
+					width={960}
+					height={960}
+					loading="eager"
+					fetchpriority="high"
+					cms={cmsKey(cms, "image", "src")}
+				/>
+				<div class="sq-hero__overlay" />
+			</div>
+		)
+	}
+	<div class="sq-container sq-hero__content">
+		<Text class="sq-eyebrow" text={eyebrow} cms={cmsKey(cms, "eyebrow")} />
+		<Heading
+			as="h1"
+			id="hero-title"
+			class="sq-hero__title"
+			title={title}
+			accent={titleAccent}
+			cms={cmsKey(cms, "title")}
+			accentCms={cmsKey(cms, "titleAccent")}
+		/>
+		<Text class="sq-hero__lede" text={sectionSubtitle} cms={cmsKey(cms, "sectionSubtitle")} />
+		<Actions ctas={ctas} class="sq-hero__actions" cms={cmsKey(cms, "ctas")} />
+		<DataList as="dl" class="sq-hero__stats" items={stats} cms={cmsKey(cms, "stats")} />
+	</div>
+</Section>

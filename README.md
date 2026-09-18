@@ -2,8 +2,8 @@
 
 Plantilla **única** de la que nace cada repo `www-*` de cliente. Astro 7 estático
 sobre [`@sumaq/site-kit`](https://github.com/elingan/sumaq-packages): el kit trae la
-configuración, los layouts y los bloques; este repo trae el contenido, la composición
-de la página y el diseño.
+configuración, el layout y los **átomos**; este repo trae el contenido, **las secciones**,
+la composición de la página y el diseño.
 
 > **No hay una segunda plantilla.** Si encuentras otra (`sumaq-cli/templates/`), es
 > anterior a la unificación del 13 de agosto de 2026 y no debe usarse.
@@ -13,15 +13,21 @@ de la página y el diseño.
 | | Dónde vive | Qué es |
 | --- | --- | --- |
 | Configuración de Astro, sitemap, validación de contenido | `@sumaq/site-kit/config` | `defineSumaqSite()` |
-| Layout, cabecera, pie, SEO, 16 bloques | `@sumaq/site-kit` | markup con `sq-*` y `data-cms` |
-| Reset CSS y vocabulario `sq-*` del CMS | `@sumaq/site-kit/tokens.css` | inventario único |
+| Layout, cabecera, pie, SEO | `@sumaq/site-kit` | `Base`, `Seo` y el chrome |
+| Átomos: `Text`, `Heading`, `Button`, `Actions`, `DataList`, `TagList`, `ContactLinks`, `Media`… | `@sumaq/site-kit` | la lógica común: regla de vacío, enlaces, imágenes, a11y |
+| Reglas comunes sobre `dist/` | `sumaq-check-site` | `lang`, un `h1`, `alt`, `canonical`, nada vacío |
+| Reset CSS y clases `sq-*` del kit | `@sumaq/site-kit/tokens.css` | lo que emiten `Section` y el chrome |
 | **Contenido** | `content/*.json` | lo que edita la clienta |
 | **Contrato del contenido** | `schema/*.yaml` | lo que el editor y el build validan |
-| **Composición de la página** | `src/pages/*.astro` | qué bloques y en qué orden |
+| **Secciones** | `src/sections/*.astro` | el marcado de cada bloque, compuesto con átomos |
+| **Composición de la página** | `src/pages/*.astro` | qué secciones y en qué orden |
 | **Diseño** | `src/styles/site.css` | lo que se vende |
 
-La regla que sostiene el modelo: **el markup no se copia nunca**. Si un bloque no
-encaja, se cambia en el kit y lo heredan los ~100 sitios; no se forkea aquí.
+La regla que sostiene el modelo: **las secciones son del sitio y el kit aporta átomos**.
+Una sección se escribe aquí con sus propias clases; lo que se repite con lógica (un enlace
+`tel:`, una imagen del CMS, la regla de vacío) lo pone un átomo del kit, que se usa o se
+envuelve pero **no se copia**. Un sitio entregado no cambia de diseño al actualizar el kit.
+Ver el [README del kit](https://github.com/elingan/sumaq-packages/tree/main/packages/site-kit).
 
 ## Crear un sitio nuevo
 
@@ -97,8 +103,10 @@ borra su teléfono— pasaría limpio.
 │   ├── layouts/
 │   │   └── Base.astro    # Envuelve el Base del kit: logo, CSS, header/footer
 │   ├── pages/
-│   │   ├── index.astro   # Composición de bloques
+│   │   ├── index.astro   # Composición de secciones
 │   │   └── robots.txt.ts
+│   ├── sections/         # Hero, Services, Contact: marcado propio con átomos del kit
+│   ├── ui/               # Envoltorios opcionales de átomos (ver su README)
 │   └── styles/
 │       ├── global.css    # Importa tokens del kit + tokens del sitio
 │       └── site.css      # El diseño
@@ -148,13 +156,13 @@ tarjetas no. Si quieres el tuyo, pon `media/placeholder.webp` y gana sobre el de
 
 Tres capas, y la frontera importa:
 
-1. **Reset y vocabulario `sq-*`** → `@sumaq/site-kit/tokens.css`. No los redefinas: el
-   editor de la app solo emite clases de esa lista, y duplicarlas aquí desincroniza el
-   sitio del editor.
+1. **Reset y clases `sq-*` del kit** → `@sumaq/site-kit/tokens.css`. No las redefinas:
+   son las que emiten `Section`, el chrome y los ganchos de los átomos. Las clases de tus
+   secciones son tuyas y no necesitan el prefijo.
 2. **Tokens del sitio** → `:root` en `global.css`. Color, tipografía, espaciado. El kit
    espera al menos `--color-text`, `--color-bg`, `--color-muted` y `--color-accent`.
-3. **Diseño** → `site.css`. Cámbialo entero. Dos sitios con el mismo `Hero` pueden ser
-   irreconocibles entre sí.
+3. **Diseño** → `site.css`, junto con el marcado de `src/sections/`. Cámbialos enteros.
+   Dos sitios que parten de esta plantilla pueden ser irreconocibles entre sí.
 
 Sin Tailwind ni DaisyUI, a propósito.
 
@@ -219,5 +227,5 @@ local solo puede construir en el runner del lab, y uno de `kallpa-server` solo e
 
 ## Documentación
 
-- [Contrato de bloque](https://github.com/elingan/sumaq-packages) — `amauta/packages/block-contract.md`
+- [Kit de átomos](https://github.com/elingan/sumaq-packages) — `amauta/packages/plan-kit-atomos.md` y el README de `packages/site-kit`
 - [Astro](https://docs.astro.build) · [Styling](https://docs.astro.build/en/guides/styling/)

@@ -1,0 +1,55 @@
+---
+/**
+ * Servicios en tarjetas. Sección de este sitio: la cabecera es la del kit y
+ * las tarjetas son marcado propio con átomos.
+ */
+import { Section, SectionHeader, Text, Heading, cmsKey, hasText, list } from "@sumaq/site-kit";
+import type { BlockProps } from "@sumaq/site-kit/types";
+
+interface Props extends BlockProps {
+	items?: { body?: string; icon?: string; title?: string }[];
+}
+
+const {
+	sectionLabel,
+	sectionTitle,
+	sectionTitleAccent,
+	sectionSubtitle,
+	items = [],
+	section = "services",
+	layout,
+	density,
+	variant = "muted",
+	id = "services",
+} = Astro.props;
+
+const cms = section;
+const cards = list<any>(items).filter((item) => hasText(item.title) || hasText(item.body));
+---
+
+<Section layout={layout} density={density} name="services" variant={variant} id={id} cms={cms}>
+	<SectionHeader
+		label={sectionLabel}
+		title={sectionTitle}
+		titleAccent={sectionTitleAccent}
+		lede={sectionSubtitle}
+		cms={cms}
+	/>
+	{
+		cards.length > 0 && (
+			<div class="sq-services__grid">
+				{cards.map((item: any, i: number) => (
+					<article class="sq-services__card">
+						{hasText(item.icon) && (
+							<div class={`sq-services__icon sq-services__icon--${item.icon}`} aria-hidden="true">
+								✦
+							</div>
+						)}
+						<Heading as="h3" title={item.title} cms={cmsKey(cms, "items", i, "title")} />
+						<Text text={item.body} cms={cmsKey(cms, "items", i, "body")} />
+					</article>
+				))}
+			</div>
+		)
+	}
+</Section>

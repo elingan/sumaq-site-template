@@ -17,9 +17,10 @@ import { qrcode } from 'vite-plugin-qrcode';
 const defaultLocale = process.env.SITE_LOCALE ?? 'de';
 const extraLocales = (process.env.SITE_LOCALES ?? '').split(';').filter(Boolean);
 
-// El kit aporta: salida estática, sitemap, imágenes responsive y la validación
-// de `content/*.json` contra `schema/*.yaml` en `astro:build:start`. Si el contenido
-// no cumple el schema, el build falla y no se publica nada.
+// El kit aporta: salida estática, sitemap, imágenes responsive, la validación
+// de `content/*.json` contra `schema/*.yaml` en `astro:build:start` y las reglas
+// comunes sobre `dist/` al terminar (`sumaq-check-site`). Si algo no se cumple,
+// el build falla y no se publica nada.
 export default defineSumaqSite({
 	site: process.env.SITE_URL ?? 'https://example.com',
 	i18n:

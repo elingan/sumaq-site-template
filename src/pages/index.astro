@@ -1,14 +1,17 @@
 ---
 /**
- * Home de arranque. Cada bloque viene del kit y recibe su rama de
+ * Home de arranque. Las secciones son de este sitio (`src/sections/`); el kit
+ * aporta los átomos con los que están hechas. Cada una recibe su rama de
  * `content/index.json`, cuyo contrato está en `schema/page.index.yaml`.
  *
- * Para construir el sitio real: cambia la composición de bloques aquí, el
- * contenido en `content/`, el schema en `schema/` y el diseño en
- * `src/styles/site.css`. El markup no se toca — vive en el kit.
+ * Para construir el sitio real: cambia la composición aquí, el marcado y las
+ * clases en `src/sections/`, el contenido en `content/`, el schema en `schema/`
+ * y el diseño en `src/styles/site.css`.
  */
 import Base from '../layouts/Base.astro';
-import { Hero, Services, Contact } from '@sumaq/site-kit';
+import Hero from '../sections/Hero.astro';
+import Services from '../sections/Services.astro';
+import Contact from '../sections/Contact.astro';
 import data from '../../content/index.json';
 ---
 
