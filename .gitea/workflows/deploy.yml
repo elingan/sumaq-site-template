@@ -46,21 +46,29 @@
 #                        canónico, en la forma `dominio=ruta` separados por `;`.
 #                        La escribe sumaq-app, y la mayoría de sitios no la tiene.
 #                        Sin ella el paso de redirecciones no se ejecuta.
-#   SITE_ANALYTICS_ORIGIN (organización) origen del tracker de Ñahui:
-#                        https://analytics.elingan.dev en producción,
-#                        http://localhost:5188 contra una Ñahui de desarrollo.
-#                        Describe el entorno —igual que SITE_DEPLOY_TARGET— así
-#                        que es común a los ~100. Sin ella el sitio cae al
-#                        tracker de producción.
 #   SITE_ANALYTICS_KEY   (repo) la `public_key` que Ñahui asigna a ESTE sitio, y
 #                        que viaja en el atributo `data-site` del <script>. No es
 #                        un secreto: va en el HTML público de todas las páginas.
 #                        La defensa de la ingesta es la comprobación de `Origin`
 #                        contra el dominio dado de alta, el límite de tasa y la
 #                        validación del payload, no esta clave.
-#                        🔑 Sin ella NO se emite ninguna etiqueta: la analítica
-#                        es opt-in por sitio. Así el sitio de demostración no
-#                        contamina las métricas de nadie.
+#   SITE_ANALYTICS_ORIGIN (repo) origen del tracker de Ñahui:
+#                        https://analytics.elingan.dev en producción,
+#                        http://localhost:5188 contra una Ñahui de desarrollo.
+#                        Describe el entorno, pero NO vive en la organización: va
+#                        en el repo porque forma pareja con la clave y sumaq-app
+#                        escribe las dos en la misma operación. Mientras estuvo
+#                        arriba, una mitad la escribía la app por API y la otra
+#                        una persona en la interfaz de Gitea, y la integridad
+#                        dependía de que nadie olvidara la que no era suya.
+#                        🔑 Sin LAS DOS no se emite ninguna etiqueta: la analítica
+#                        es opt-in por pareja. Así el sitio de demostración no
+#                        contamina las métricas de nadie, y un entorno a medio
+#                        configurar no mide contra producción — el layout del kit
+#                        ya no tiene origen por defecto.
+#                        ⛔ Clave sin origen ABORTA el job (paso «Resolver slug…»).
+#                        Publicar sin medir es un fallo mudo, y este es el único
+#                        punto de la cadena que puede pararlo a tiempo.
 #
 # Las de repo tienen que ser de repo: identifican a un sitio concreto, y
 # puestas en la organización le pondrían a los ~100 los datos del primero.
@@ -119,6 +127,8 @@ jobs:
           TARGET_VAR: ${{ vars.SITE_DEPLOY_TARGET }}
           LOCALE_VAR: ${{ vars.SITE_LOCALE }}
           LOCALES_VAR: ${{ vars.SITE_LOCALES }}
+          ANALYTICS_KEY_VAR: ${{ vars.SITE_ANALYTICS_KEY }}
+          ANALYTICS_ORIGIN_VAR: ${{ vars.SITE_ANALYTICS_ORIGIN }}
         run: |
           set -euo pipefail
           slug="${SLUG_VAR}"
@@ -185,6 +195,23 @@ jobs:
             done
           fi
 
+          # Las dos de analítica van en pareja: el layout del kit no emite la
+          # etiqueta sin las dos, y ya no tiene origen por defecto. Una clave sin
+          # origen no es "medio configurado", es una configuración rota, y el modo
+          # de fallo sería mudo —el sitio se publica, en verde, sin medir, y nadie
+          # lo nota hasta que alguien mira el panel de Ñahui y lo ve vacío—. Aquí
+          # se para, porque este es el único punto de la cadena que puede: el
+          # frontmatter del layout corre una vez por página y no aborta nada.
+          #
+          # El caso contrario (origen sin clave) NO es un error: es el sitio que no
+          # mide a propósito, que es el defecto de la flota.
+          if [[ -n "${ANALYTICS_KEY_VAR:-}" && -z "${ANALYTICS_ORIGIN_VAR:-}" ]]; then
+            echo "SITE_ANALYTICS_KEY está puesta y SITE_ANALYTICS_ORIGIN no." >&2
+            echo "La analítica es opt-in por pareja: sin origen el sitio se publicaría sin medir." >&2
+            echo "Escribe SITE_ANALYTICS_ORIGIN en las variables de este repo (no en la organización)." >&2
+            exit 1
+          fi
+
           {
             echo "SLUG=${slug}"
             echo "DOMAIN=${domain}"
@@ -195,6 +222,11 @@ jobs:
           } >> "$GITHUB_ENV"
 
           echo "Slug ${slug} · dominio ${domain} · destino ${target} · idioma ${locale}${locales:+ (+${locales})}"
+          if [[ -n "${ANALYTICS_KEY_VAR:-}" ]]; then
+            echo "Analítica: activa contra ${ANALYTICS_ORIGIN_VAR}"
+          else
+            echo "Analítica: sin SITE_ANALYTICS_KEY, el sitio se publica sin tracker"
+          fi
 
       # act_runner levanta un contenedor node:24-bookworm nuevo por cada job
       # (docs/bitacora.md, 23 ago 2026): sin esto, cada push reinstala

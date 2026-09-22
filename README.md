@@ -191,6 +191,12 @@ aquí sin tocarlo**: no lleva el dominio ni la URL incrustados, así que el fich
 idéntico en los ~100 repos. Lo que cambia son unas variables de Actions, y el nivel al
 que vive cada una dice a qué pertenece el dato:
 
+> 📌 **«~100» es la escala de diseño, no el inventario.** A 22 de septiembre de 2026 hay
+> **3 sitios publicados**; los ~100 son la expectativa del año que viene. Conviene leerlo
+> bien porque invierte la conclusión operativa: un cambio que toca todos los repos `www-*`
+> no es «caro, mejor más adelante», es lo más barato que va a ser nunca. Tres repos hoy;
+> cien y una migración coordinada dentro de un año.
+
 | Variable | Nivel | Lab local | `kallpa-server` |
 | --- | --- | --- | --- |
 | `SITE_DEPLOY_TARGET` | organización | `docroot` — `cp` al docroot que sirve Caddy | `sites` — `rsync` a `/srv/sites/<dominio>/` |
@@ -198,6 +204,16 @@ que vive cada una dice a qué pertenece el dato:
 | `SITE_URL` | repo | sin valor: se usa `http://<dominio>.localhost:8080` | la URL pública, que escribe `sumaq-app` |
 | `SITES_HOST` | organización | — | `sites@10.10.0.3` — el servidor que sirve los sitios, por el overlay |
 | `SITES_PORT` | organización | — | el puerto SSH del destino |
+| `SITE_ANALYTICS_KEY` | repo | a mano desde el panel de Ñahui | la `public_key` del sitio, que escribe `sumaq-app` |
+| `SITE_ANALYTICS_ORIGIN` | repo | la Ñahui local (`http://localhost:5188`) | `https://analytics.elingan.dev`, que escribe `sumaq-app` |
+
+**Las dos de analítica son la excepción interesante a la regla de los niveles.** El origen
+describe el entorno, así que «debería» ser de organización como `SITE_DEPLOY_TARGET` — y lo
+fue hasta el 22 de septiembre de 2026. El problema no era a qué pertenece el dato, sino que
+las dos mitades de una pareja se escribían desde sitios distintos: la clave por API desde
+`sumaq-app`, el origen a mano en la interfaz de Gitea. Ahora las escribe `sumaq-app` en la
+misma operación, y el workflow **aborta** si encuentra clave sin origen: sin las dos el
+layout del kit no emite nada, y publicar sin medir es un fallo que no avisa.
 
 `SITES_HOST` va en la organización y no incrustado en el workflow por un motivo concreto:
 las dos máquinas del par se turnan para sostener la IP pública, y al conmutar hay que
