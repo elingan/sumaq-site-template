@@ -422,6 +422,16 @@ jobs:
             destino_html="$(escapar "$destino")"
 
             carpeta="$(mktemp -d)"
+            # 🔴 `mktemp -d` crea la carpeta con 0700, y `rsync -a` copia el modo
+            # del directorio de ORIGEN al de destino. Sin este chmod el dominio
+            # acababa en /srv/sites/<dom>/ con 0700 y dueño `sites`, y Caddy —que
+            # corre como su propio usuario— no podía ni atravesarlo: el endpoint
+            # `ask` respondía 404 (busca <dom>/index.html), Caddy se negaba a
+            # emitir el certificado y el dominio moría en el handshake. En el CMS
+            # se ve como «issuing certificate · resolves to fetch failed».
+            # La carpeta del sitio principal nunca lo sufrió porque su origen es
+            # `dist/`, que ya viene 0755 del build. Comprobado el 23 sep 2026.
+            chmod 755 "$carpeta"
             printf '%s\n' "$destino" > "${carpeta}/_redirect"
 
             cat > "${carpeta}/index.html" <<HTML
