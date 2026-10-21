@@ -240,3 +240,39 @@ contact:
           label: Telefon
           type: string
           required: true
+    # Solo se ve en el sitio si el formulario está activado en Sumaq (lo hace el
+    # admin). Sin eso, estos textos se guardan pero no se publica nada.
+    - name: form
+      label: Kontaktformular
+      type: object
+      fields:
+        - name: nameLabel
+          label: Feld «Name»
+          type: string
+        - name: emailLabel
+          label: Feld «E-Mail»
+          type: string
+        - name: phoneLabel
+          label: Feld «Telefon» (leer = kein Telefonfeld)
+          type: string
+        - name: messageLabel
+          label: Feld «Nachricht»
+          type: string
+        - name: consentText
+          label: Einwilligung (mit Link zur Datenschutzerklärung)
+          type: text
+        - name: submitLabel
+          label: Schaltfläche
+          type: string
+        - name: sendingText
+          label: Text beim Senden
+          type: string
+        - name: successText
+          label: Text nach dem Senden
+          type: text
+        - name: errorText
+          label: Text bei einem Fehler
+          type: text
+        - name: noscriptText
+          label: Text ohne JavaScript
+          type: text

@@ -84,6 +84,18 @@
         "email": "praxis@example.at",
         "phone": "0660 123 45 67"
       }
-    ]
+    ],
+    "form": {
+      "nameLabel": "Name",
+      "emailLabel": "E-Mail",
+      "phoneLabel": "Telefon (optional)",
+      "messageLabel": "Ihre Nachricht",
+      "consentText": "Ich bin einverstanden, dass meine Angaben zur Beantwortung meiner Anfrage verarbeitet werden. Mehr dazu in der [Datenschutzerklärung](/datenschutz).",
+      "submitLabel": "Nachricht senden",
+      "sendingText": "Wird gesendet …",
+      "successText": "Danke! Ihre Nachricht ist angekommen. Ich melde mich innerhalb von zwei Werktagen.",
+      "errorText": "Das hat leider nicht geklappt. Bitte versuchen Sie es noch einmal oder schreiben Sie mir direkt per E-Mail.",
+      "noscriptText": "Das Formular braucht JavaScript. Sie erreichen mich auch direkt per E-Mail."
+    }
   }
 }

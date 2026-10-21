@@ -69,6 +69,11 @@
 #                        ⛔ Clave sin origen ABORTA el job (paso «Resolver slug…»).
 #                        Publicar sin medir es un fallo mudo, y este es el único
 #                        punto de la cadena que puede pararlo a tiempo.
+#   SITE_FORMS_ORIGIN    (repo) origen de sumaq-app, adonde envía el formulario de
+#                        contacto (`ContactForm` del kit). La escribe la app solo
+#                        mientras el admin tenga el formulario activado; sin ella
+#                        el formulario no se pinta. Apagarlo en la app lo quita del
+#                        sitio en el siguiente build.
 #
 # Las de repo tienen que ser de repo: identifican a un sitio concreto, y
 # puestas en la organización le pondrían a los ~100 los datos del primero.
@@ -129,6 +134,7 @@ jobs:
           LOCALES_VAR: ${{ vars.SITE_LOCALES }}
           ANALYTICS_KEY_VAR: ${{ vars.SITE_ANALYTICS_KEY }}
           ANALYTICS_ORIGIN_VAR: ${{ vars.SITE_ANALYTICS_ORIGIN }}
+          FORMS_ORIGIN_VAR: ${{ vars.SITE_FORMS_ORIGIN }}
         run: |
           set -euo pipefail
           slug="${SLUG_VAR}"
@@ -212,6 +218,16 @@ jobs:
             exit 1
           fi
 
+          # El origen de sumaq-app adonde envía el formulario de contacto. Lo escribe
+          # la app solo mientras el formulario esté activo; sin él, `ContactForm`
+          # no se pinta. Acaba en un atributo del HTML: se comprueba que sea un
+          # origen y nada más (sin ruta, sin espacios).
+          forms_origin="${FORMS_ORIGIN_VAR:-}"
+          if [[ -n "$forms_origin" ]] && ! [[ "$forms_origin" =~ ^https?://[a-z0-9.-]+(:[0-9]+)?$ ]]; then
+            echo "SITE_FORMS_ORIGIN inválido: '${forms_origin}'" >&2
+            exit 1
+          fi
+
           {
             echo "SLUG=${slug}"
             echo "DOMAIN=${domain}"
@@ -219,6 +235,7 @@ jobs:
             echo "SITE_URL=${url}"
             echo "SITE_LOCALE=${locale}"
             echo "SITE_LOCALES=${locales}"
+            echo "FORMS_ORIGIN=${forms_origin}"
           } >> "$GITHUB_ENV"
 
           echo "Slug ${slug} · dominio ${domain} · destino ${target} · idioma ${locale}${locales:+ (+${locales})}"
@@ -226,6 +243,11 @@ jobs:
             echo "Analítica: activa contra ${ANALYTICS_ORIGIN_VAR}"
           else
             echo "Analítica: sin SITE_ANALYTICS_KEY, el sitio se publica sin tracker"
+          fi
+          if [[ -n "$forms_origin" ]]; then
+            echo "Formulario de contacto: envía a ${forms_origin}"
+          else
+            echo "Formulario de contacto: sin SITE_FORMS_ORIGIN, no se publica"
           fi
 
       # act_runner levanta un contenedor node:24-bookworm nuevo por cada job
@@ -286,6 +308,10 @@ jobs:
         env:
           PUBLIC_NAHUI_SITE: ${{ vars.SITE_ANALYTICS_KEY }}
           PUBLIC_NAHUI_ORIGIN: ${{ vars.SITE_ANALYTICS_ORIGIN }}
+          # `ContactForm` del kit: adónde envía y con qué slug. Las dos salen del
+          # paso de arriba, ya validadas; sin cualquiera de ellas no se pinta.
+          PUBLIC_FORMS_ORIGIN: ${{ env.FORMS_ORIGIN }}
+          PUBLIC_FORMS_SITE: ${{ env.SLUG }}
         run: pnpm build
 
       - name: Comprobar que hay build

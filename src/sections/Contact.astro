@@ -3,12 +3,27 @@
  * Personas de contacto. Sección de este sitio: la cabecera es la del kit, y
  * cada tarjeta, marcado propio con `Text` y `ContactLinks` (que se ocupa de
  * `mailto:` y del `tel:` internacional).
+ *
+ * Debajo, el formulario del kit. Solo aparece si el admin lo activó en Sumaq
+ * (el build recibe entonces `PUBLIC_FORMS_ORIGIN`); sin eso `ContactForm` no
+ * emite nada y la sección se queda en las tarjetas.
  */
-import { Section, SectionHeader, Text, Heading, ContactLinks, cmsKey, hasText, list } from "@sumaq/site-kit";
+import {
+	Section,
+	SectionHeader,
+	Text,
+	Heading,
+	ContactLinks,
+	ContactForm,
+	cmsKey,
+	hasText,
+	list,
+} from "@sumaq/site-kit";
 import type { BlockProps } from "@sumaq/site-kit/types";
 
 interface Props extends BlockProps {
 	cards?: { email?: string; name?: string; phone?: string; role?: string }[];
+	form?: Record<string, string> | null;
 }
 
 const {
@@ -17,6 +32,7 @@ const {
 	sectionTitleAccent,
 	sectionSubtitle,
 	cards = [],
+	form,
 	section = "contact",
 	layout,
 	density,
@@ -51,4 +67,5 @@ const people = list<any>(cards).filter(
 			</div>
 		)
 	}
+	<ContactForm form={form} cms={cmsKey(cms, "form")} />
 </Section>
