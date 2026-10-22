@@ -12,7 +12,11 @@ import Base from '../layouts/Base.astro';
 import Hero from '../sections/Hero.astro';
 import Services from '../sections/Services.astro';
 import Contact from '../sections/Contact.astro';
-import data from '../../content/index.json';
+import { getPage } from '@sumaq/site-kit/data';
+
+// Por el kit y no con un `import` del JSON: en la vista previa del CMS lee el
+// borrador; en el build de producción, el mismo `content/index.json` de siempre.
+const data = (await getPage('index'))!;
 ---
 
 <Base seo={data.seo}>

@@ -40,7 +40,11 @@ todos.
    sin el cual la página queda rota.
 2. `content/<nombre>.json` — los datos, con la misma forma.
 3. `src/sections/<Bloque>.astro` — una sección por bloque nuevo, compuesta con átomos.
-4. `src/pages/<nombre>.astro` — importa las secciones y les pasa su rama del JSON.
+4. `src/pages/<nombre>.astro` — importa las secciones y les pasa su rama del JSON, leída
+   con `getPage('<nombre>')` de `@sumaq/site-kit/data`, **nunca** con un `import` del JSON:
+   el `import` sale bien en producción, pero en la edición visual del CMS pinta lo publicado
+   en vez del borrador. Las colecciones, con `getCollection` / `getEntry` / `entryPaths`; en una
+   página de detalle, `Astro.props.entry ?? (await getEntry('<colección>', Astro.params.slug))`.
 5. Estilos nuevos en `site.css`, con las clases que hayas puesto en las secciones.
 
 El build valida 2 contra 1 y, al terminar, `sumaq-check-site` comprueba el HTML (`lang`,

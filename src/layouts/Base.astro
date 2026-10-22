@@ -8,7 +8,7 @@
  */
 import { Base as KitBase } from '@sumaq/site-kit';
 import '../styles/global.css';
-import defaults from '../../content/index.json';
+import { getPage } from '@sumaq/site-kit/data';
 
 interface Props {
 	seo?: Record<string, any>;
@@ -17,6 +17,8 @@ interface Props {
 }
 
 const { seo = {}, header: headerOverride, footer: footerOverride } = Astro.props;
+// Cabecera y pie por defecto: `content/index.json`, o su borrador en la vista previa.
+const defaults: Record<string, any> = (await getPage('index')) ?? {};
 const header = { ...defaults.header, ...headerOverride };
 const footer = { ...defaults.footer, ...footerOverride };
 const chrome: any = { seo, header, footer, logo: header.logo };

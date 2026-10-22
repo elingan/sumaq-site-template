@@ -293,6 +293,34 @@ jobs:
           set -euo pipefail
           [[ -d dist ]] || { echo "No existe dist/ tras el build" >&2; exit 1; }
 
+      # B5: el MISMO dist/ al supervisor de previews de kallpa-server, que lo sirve
+      # en https://<slug>.preview.sumaqsite-preview.eu solo con un token de la app.
+      # Se compila una vez: lo que se aprueba es lo que se publica.
+      #
+      # Lo habilitan una variable y un secreto de organización (describen el
+      # entorno, no el sitio): PREVIEW_UPLOAD_URL (http://10.10.0.1:5191 en
+      # kallpa; http://preview-runtime:5191 en el lab) y PREVIEW_UPLOAD_TOKEN, que
+      # solo sirve para subir previews. Sin la variable, el paso no existe.
+      #
+      # `continue-on-error` mientras la publicación no espere a la aprobación (B5
+      # Fase 4): hoy un supervisor caído no puede impedir publicar. El build
+      # tampoco se repite: `curl -T -` sube el tar en streaming, sin fichero.
+      - name: Subir el preview
+        if: vars.PREVIEW_UPLOAD_URL != ''
+        continue-on-error: true
+        env:
+          PREVIEW_UPLOAD_URL: ${{ vars.PREVIEW_UPLOAD_URL }}
+          PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
+          BUILD_ID: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          : "${PREVIEW_UPLOAD_TOKEN:?falta el secreto de organización PREVIEW_UPLOAD_TOKEN}"
+          tar -czf - -C dist . | curl -fsS --max-time 300 -T - \
+            -H "Authorization: Bearer ${PREVIEW_UPLOAD_TOKEN}" \
+            "${PREVIEW_UPLOAD_URL%/}/artifacts/${SLUG}?build=${BUILD_ID}"
+          echo
+          echo "Preview subido → ${SLUG} @ ${BUILD_ID}"
+
       # Lab: el runner monta el docroot del host en /sites (local-server/runner/config.yaml).
       - name: Publicar en el docroot del lab
         if: env.DEPLOY_TARGET == 'docroot'
