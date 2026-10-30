@@ -219,27 +219,6 @@ contact:
     - name: sectionSubtitle
       label: Abschnitts-Untertitel
       type: text
-    - name: cards
-      label: Kontaktkarten
-      type: object
-      required: true
-      list: { display: inline, sortable: true }
-      fields:
-        - name: name
-          label: Name
-          type: string
-          required: true
-        - name: role
-          label: Funktion
-          type: string
-        - name: email
-          label: E-Mail
-          type: string
-          required: true
-        - name: phone
-          label: Telefon
-          type: string
-          required: true
     # Solo se ve en el sitio si el formulario está activado en Sumaq (lo hace el
     # admin). Sin eso, estos textos se guardan pero no se publica nada.
     - name: form

@@ -77,14 +77,6 @@
     "sectionTitle": "Ich freue mich",
     "sectionTitleAccent": "auf Ihre Anfrage",
     "sectionSubtitle": "Am einfachsten per E-Mail — ich melde mich innerhalb von zwei Werktagen zurück.",
-    "cards": [
-      {
-        "name": "Maria Musterfrau, MSc",
-        "role": "Psychotherapeutin",
-        "email": "praxis@example.at",
-        "phone": "0660 123 45 67"
-      }
-    ],
     "form": {
       "nameLabel": "Name",
       "emailLabel": "E-Mail",

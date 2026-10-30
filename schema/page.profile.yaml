@@ -1,0 +1,85 @@
+label: Praxisdaten
+description: Name, Adresse und Kontakt, wie sie auf der Website stehen. Suchmaschinen lesen sie mit.
+group: global
+
+identity:
+  label: Wer Sie sind
+  fields:
+    - name: kind
+      label: Auftritt
+      type: select
+      required: true
+      options:
+        values:
+          - { value: person, label: Einzelperson }
+          - { value: practice, label: Praxis mit eigenem Namen }
+          - { value: organization, label: Praxisgemeinschaft oder Unternehmen }
+    - { name: name, label: Name, type: string, required: true }
+    - { name: practiceName, label: Name der Praxis, type: string }
+    - name: profession
+      label: Beruf
+      type: select
+      options:
+        values:
+          - { value: psychotherapist, label: Psychotherapie }
+          - { value: psychotherapist-trainee, label: Psychotherapie in Ausbildung }
+          - { value: clinical-psychologist, label: Klinische Psychologie }
+          - { value: psychiatrist, label: Psychiatrie }
+          - { value: physiotherapist, label: Physiotherapie }
+          - { value: life-coach, label: Lebens- und Sozialberatung }
+          - { value: bodywork, label: Körperarbeit und Shiatsu }
+          - { value: yoga, label: Yoga }
+          - { value: consulting, label: Beratung }
+          - { value: other, label: Andere }
+    - { name: jobTitle, label: Berufsbezeichnung, type: string }
+    - { name: founder, label: Gründer oder Gründerin, type: string }
+    - { name: portrait, label: Porträt, type: image }
+    - { name: logo, label: Logo, type: image }
+
+contact:
+  label: Kontakt
+  fields:
+    - { name: telephone, label: Telefon, type: string }
+    - { name: email, label: E-Mail, type: string }
+    - { name: showAddress, label: Adresse auf der Website zeigen, type: boolean }
+    - { name: street, label: Straße und Hausnummer, type: string }
+    - { name: postalCode, label: PLZ, type: string }
+    - { name: locality, label: Ort, type: string }
+    - { name: country, label: Land, type: string }
+    - name: hours
+      label: Sprechzeiten
+      type: object
+      list: { sortable: true }
+      fields:
+        - name: days
+          label: Tage
+          type: select
+          options:
+            multiple: true
+            values:
+              - { value: Mo, label: Montag }
+              - { value: Tu, label: Dienstag }
+              - { value: We, label: Mittwoch }
+              - { value: Th, label: Donnerstag }
+              - { value: Fr, label: Freitag }
+              - { value: Sa, label: Samstag }
+              - { value: Su, label: Sonntag }
+        - { name: opens, label: Von (z. B. 09:00), type: string }
+        - { name: closes, label: Bis (z. B. 17:00), type: string }
+
+presence:
+  label: Weitere Profile
+  fields:
+    - { name: sameAs, label: "Links (Google-Profil, Berufsliste, LinkedIn)", type: url, list: true }
+    - name: languages
+      label: Sprachen
+      type: select
+      options:
+        multiple: true
+        values:
+          - { value: de, label: Deutsch }
+          - { value: en, label: Englisch }
+          - { value: es, label: Spanisch }
+          - { value: tr, label: Türkisch }
+          - { value: bs-hr-sr, label: Bosnisch/Kroatisch/Serbisch }
+          - { value: hu, label: Ungarisch }

@@ -1,0 +1,20 @@
+{
+  "identity": {
+    "kind": "practice",
+    "name": "Maria Musterfrau, MSc",
+    "practiceName": "Praxis Musterfrau",
+    "profession": "psychotherapist",
+    "jobTitle": "Psychotherapeutin"
+  },
+  "contact": {
+    "telephone": "0660 123 45 67",
+    "email": "praxis@example.at",
+    "showAddress": false,
+    "country": "AT"
+  },
+  "presence": {
+    "languages": [
+      "de"
+    ]
+  }
+}
