@@ -1,247 +1,183 @@
 # sumaq-site-template
 
-Plantilla **única** de la que nace cada repo `www-*` de cliente. Astro 7 estático
-sobre [`@sumaq/site-kit`](https://github.com/elingan/sumaq-packages): el kit trae la
-configuración, el layout y los **átomos**; este repo trae el contenido, **las secciones**,
-la composición de la página y el diseño.
+Plantilla **única** de la que nace cada repositorio `www-*` de cliente. Es un sitio Astro estático
+sobre [`@sumaq/site-kit`](https://github.com/elingan/sumaq-packages/tree/main/packages/site-kit):
+el kit trae la configuración, el layout y los **átomos**; este repositorio trae el contenido, **las
+secciones**, la composición de la página y el diseño.
 
-> **No hay una segunda plantilla.** Si encuentras otra (`sumaq-cli/templates/`), es
-> anterior a la unificación del 13 de agosto de 2026 y no debe usarse.
+Las reglas para quien edita un sitio (personas o agentes) están en [`AGENTS.md`](AGENTS.md); la
+historia de las decisiones, en [`amauta/decision-log.md`](amauta/decision-log.md).
 
 ## Qué aporta cada lado
 
 | | Dónde vive | Qué es |
 | --- | --- | --- |
-| Configuración de Astro, sitemap, validación de contenido | `@sumaq/site-kit/config` | `defineSumaqSite()` |
-| Layout, cabecera, pie, SEO | `@sumaq/site-kit` | `Base`, `Seo` y el chrome |
-| Átomos: `Text`, `Heading`, `Button`, `Actions`, `DataList`, `TagList`, `ContactLinks`, `Media`… | `@sumaq/site-kit` | la lógica común: regla de vacío, enlaces, imágenes, a11y |
-| Reglas comunes sobre `dist/` | `sumaq-check-site` | `lang`, un `h1`, `alt`, `canonical`, nada vacío |
-| Reset CSS y clases `sq-*` del kit | `@sumaq/site-kit/tokens.css` | lo que emiten `Section` y el chrome |
+| Configuración de Astro, sitemap, validación del contenido | `@sumaq/site-kit/config` | `defineSumaqSite()` |
+| Layout, cabecera, pie, SEO, datos estructurados | `@sumaq/site-kit` | `Base`, `Seo` y el chrome |
+| Átomos (`Text`, `Heading`, `Button`, `Media`, `ContactForm`…) | `@sumaq/site-kit` | la lógica común: regla de vacío, enlaces, imágenes, accesibilidad |
+| Reglas comunes sobre `dist/` | `sumaq-check-site` | se ejecuta al terminar el build |
+| Reset CSS y clases `sq-*` | `@sumaq/site-kit/tokens.css` | lo que emiten `Section`, el chrome y los átomos |
 | **Contenido** | `content/*.json` | lo que edita la clienta |
-| **Contrato del contenido** | `schema/*.yaml` | lo que el editor y el build validan |
+| **Contrato del contenido** | `schema/*.yaml` | lo que validan el editor y el build |
 | **Secciones** | `src/sections/*.astro` | el marcado de cada bloque, compuesto con átomos |
 | **Composición de la página** | `src/pages/*.astro` | qué secciones y en qué orden |
-| **Diseño** | `src/styles/site.css` | lo que se vende |
+| **Diseño** | `src/styles/site.css` | propio de cada sitio |
 
-La regla que sostiene el modelo: **las secciones son del sitio y el kit aporta átomos**.
-Una sección se escribe aquí con sus propias clases; lo que se repite con lógica (un enlace
-`tel:`, una imagen del CMS, la regla de vacío) lo pone un átomo del kit, que se usa o se
-envuelve pero **no se copia**. Un sitio entregado no cambia de diseño al actualizar el kit.
-Ver el [README del kit](https://github.com/elingan/sumaq-packages/tree/main/packages/site-kit).
+La regla que sostiene el modelo: **las secciones son del sitio y el kit aporta átomos**. Un átomo
+se usa o se envuelve, pero no se copia. El catálogo de átomos y sus reglas están en el README del
+kit (`sumaq-packages` `packages/site-kit/README.md`).
 
-## Crear un sitio nuevo
+## Cómo nace un sitio
+
+Un sitio no se crea a mano. Hay dos caminos, y los dos parten de esta plantilla:
+
+- **`sumaq-app`** genera el repositorio `www-*` en Gitea a partir de la plantilla, que tiene que
+  estar publicada en la organización y marcada como plantilla (`CMS_SITE_TEMPLATE_REPO`). El
+  repositorio nace privado y con todo el contenido de `main`, incluido el workflow de despliegue.
+  Después la app escribe en él las variables de Actions que lo identifican.
+- **`sumaq-studio`** copia la plantilla en la carpeta del proyecto cuando esta todavía no es un
+  sitio: sin `.git`, sin pisar lo que ya exista, y con el `name` de `package.json` cambiado al de la
+  carpeta. El origen es el repositorio de GitHub, o lo que diga `SUMAQ_SITE_TEMPLATE`.
+
+Recién generado, el repositorio aún no es el sitio de nadie: el workflow no construye nada hasta
+que `sumaq-app` escribe `SITE_SLUG`.
+
+## Trabajar en local
 
 ```bash
-pnpm create astro@latest -- --template elingan/sumaq-site-template
-cd www-cliente-at
-cp .env.example .env          # editar SITE_URL
 pnpm install
-pnpm dev
+pnpm dev        # servidor de desarrollo, accesible en la red local y con QR en la terminal
+pnpm build      # valida el contenido y emite dist/
+pnpm preview    # sirve el build
 ```
 
-Después, renombra `"name"` en `package.json` al del repo (`www-cliente-at`).
+`astro.config.mjs` lee `SITE_URL`, `SITE_LOCALE` y `SITE_LOCALES` del entorno del proceso. Sin
+`SITE_URL` el sitio se construye con `https://example.com`. Las variables de analítica están
+descritas en [`.env.example`](.env.example).
 
-`@sumaq/site-kit` y `@sumaq/cms-schema` están **publicados y son públicos** en npmjs, así
-que `pnpm install` funciona sin más — igual que en el runner. El aviso anterior sobre un 404
-en `@sumaq/cms-schema` estaba obsoleto.
-
-Para desarrollar el kit y el sitio a la vez, enlaza los paquetes locales:
-
-```bash
-cd ../sumaq-packages && ./scripts/install.sh
-./scripts/link-into.sh ../sites/www-cliente-at --only site-kit
-```
-
-Con el enlace puesto, **no regeneres `pnpm-lock.yaml` en ese árbol**: grabaría un `link:`
-que el runner no resuelve. Ver [`AGENTS.md`](AGENTS.md#versiones).
-
-## Comandos
-
-| Comando | Acción |
-| --- | --- |
-| `pnpm dev` | Servidor de desarrollo (`--host`, con QR en terminal) |
-| `pnpm build` | Build estático en `./dist/` — **valida el contenido antes de emitir** |
-| `pnpm preview` | Preview local del build |
+Para desarrollar el kit y el sitio a la vez se enlaza el kit local con `scripts/link-into.sh` de
+`sumaq-packages`. Con el enlace puesto no se regenera el lockfile (ver
+[`AGENTS.md`](AGENTS.md#versiones-y-lockfile)).
 
 ## La puerta de validación
 
-`defineSumaqSite()` engancha `@sumaq/cms-schema` en `astro:build:start`: contrasta cada
-`content/*.json` con su `schema/*.yaml` **antes** de generar páginas. Si un campo marcado
-`required: true` está vacío, el build falla y no se sube nada:
+`defineSumaqSite()` contrasta cada `content/*.json` con su `schema/*.yaml` **antes** de generar
+páginas. Si un campo marcado `required: true` está vacío, el build falla y no se publica nada:
 
 ```
 ✗ content/index.json no cumple schema/page.index.yaml
 
   hero.title             Titel is required
-  contact.cards[0].phone Telefon is required
 
   El sitio no se ha publicado. No se ha subido nada al servidor.
 ```
 
-**Marca `required: true` en todo campo sin el cual la página queda rota.** Un schema sin
-campos obligatorios convierte la puerta en decorativa: solo atrapa corrupción estructural
-(una lista donde iba un objeto), que es el caso raro. El caso frecuente —una terapeuta
-borra su teléfono— pasaría limpio.
+Un schema sin campos obligatorios deja la puerta en decorativa: solo atraparía un error de
+estructura, no el caso frecuente de un dato que alguien ha borrado.
+
+Al terminar, `sumaq-check-site` revisa el HTML de `dist/` y falla si no se cumplen las reglas
+comunes (lista en el README del kit).
 
 ## Estructura
 
 ```text
 /
 ├── .gitea/workflows/
-│   └── deploy.yml        # Publicación. Idéntico en todos los sitios, no se toca
-├── schema/               # Contrato del contenido (schemas YAML)
-│   └── page.index.yaml
-├── content/              # Contenido editable (app o IDE)
-│   └── index.json
-├── media/                # Imágenes: Astro las procesa (hash + srcset)
+│   └── deploy.yml          # Publicación. Idéntico en todos los sitios, no se toca
+├── schema/                 # Contrato del contenido
+│   ├── page.index.yaml
+│   └── page.profile.yaml
+├── content/                # Contenido editable
+│   ├── index.json
+│   └── profile.json
+├── media/                  # Imágenes: Astro las procesa
 │   ├── logo.svg
-│   └── manifest.json     # lqip + alt + dimensiones, lo escribe el CMS
-├── public/               # Assets estáticos servidos tal cual
-│   ├── files/            # Adjuntos no-imagen del CMS (pdf, csv…)
-│   └── favicon.svg
+│   └── manifest.json       # lo escribe el CMS
+├── public/
+│   └── files/              # Adjuntos que no son imagen
 ├── src/
-│   ├── layouts/
-│   │   └── Base.astro    # Envuelve el Base del kit: logo, CSS, header/footer
-│   ├── pages/
-│   │   ├── index.astro   # Composición de secciones
-│   │   └── robots.txt.ts
-│   ├── sections/         # Hero, Services, Contact: marcado propio con átomos del kit
-│   ├── ui/               # Envoltorios opcionales de átomos (ver su README)
+│   ├── layouts/Base.astro  # Envuelve el Base del kit: CSS, cabecera y pie por defecto
+│   ├── pages/              # Composición de secciones y robots.txt
+│   ├── sections/           # Hero, Services, Contact
+│   ├── ui/                 # Envoltorios opcionales de átomos (ver su README)
 │   └── styles/
-│       ├── global.css    # Importa tokens del kit + tokens del sitio
-│       └── site.css      # El diseño
-├── astro.config.mjs      # defineSumaqSite()
-└── pnpm-workspace.yaml   # allowBuilds: esbuild, sharp
+│       ├── global.css      # Tokens del kit + tokens del sitio
+│       └── site.css        # El diseño
+└── astro.config.mjs        # defineSumaqSite()
 ```
+
+## Datos de la consulta: `content/profile.json`
+
+Nombre, profesión, contacto, dirección y horario viven en `content/profile.json`, con su contrato
+en `schema/page.profile.yaml`. Es una página del contenido sin ruta: tiene schema y datos, pero no
+se publica como página.
+
+De ese fichero salen dos cosas: la tarjeta de la sección de contacto (`src/sections/Contact.astro`
+lo lee con `loadProfile()`) y los datos estructurados que el kit emite para los buscadores. Al
+tener un solo origen, lo que ve la persona y lo que lee el buscador no pueden contradecirse.
+
+## Formulario de contacto
+
+La sección de contacto incluye `ContactForm` del kit. Sus textos están en el campo `form` de
+`contact` (`schema/page.index.yaml`).
+
+El formulario **solo se publica si el admin lo tiene activado en `sumaq-app`**: la app escribe
+entonces `SITE_FORMS_ORIGIN` en el repositorio y el siguiente build lo pinta. Sin esa variable el
+componente no emite nada y la sección se queda en la tarjeta. Los envíos van a `sumaq-app`; el
+sitio no conoce ningún correo.
+
+## Idiomas
+
+Los idiomas los dicta `sumaq-app` por variables, no este repositorio:
+
+- `SITE_LOCALE` es el idioma por defecto. Se sirve sin prefijo y sus datos están en la raíz de
+  `content/`. Sin ella, `de`.
+- `SITE_LOCALES` son los idiomas añadidos, separados por `;`. Cada uno se sirve bajo su prefijo
+  (`/en/`) y lee sus datos de `content/<idioma>/`.
+
+Sin `SITE_LOCALES` no se configura i18n: un sitio de un solo idioma se construye sin nada de esto.
+El schema y las imágenes se comparten entre idiomas.
 
 ## Imágenes
 
-Van en **`media/`**, hermana de `schema/` y `content/`, **no en `public/`**. Ahí Astro
-las procesa: hash de contenido en el nombre, `srcset` a cuatro anchos y una URL
-`/_astro/…` que cambia sola cuando cambia la imagen (lo que invalida la caché del CDN
-sin purgar nada). En `public/` se copiarían literales y no las tocaría nadie.
-
-Eso convierte el string del contenido en una **clave, no una URL**:
-
-```jsonc
-"image": { "alt": "Retrato", "src": "/media/portrait-a3f9c1d2.webp" }
-```
-
-Nada sirve esa ruta. **Renderiza siempre con `<Media>` del kit** — interpolar el string
-en un `src=` da un 404 silencioso:
-
-```astro
----
-import { Media } from '@sumaq/site-kit';
----
-<Media src={data.hero.image} sizes="(max-width: 900px) 100vw, 25rem" />
-```
-
-El build lo verifica: toda referencia `/media/*` del contenido tiene que existir en
-`media/`, y un `/uploads/*` heredado del CMS es error directo.
-
-**Imágenes puestas a mano.** Copia el fichero en `media/` y ya está: el CMS no las
-conoce, no las borra y no las sobrescribe. Referenciarlas desde un componente con
-`import` directo también funciona.
-
-**Adjuntos no-imagen** (pdf, csv) van a `public/files/` y se referencian como
-`/files/tarifas-a3f9c1d2.pdf`. Se copian tal cual porque su URL tiene que seguir
-funcionando para quien el cliente se la haya pasado.
-
-**Placeholder.** Lo trae el kit; ningún sitio necesita su propio fichero. Se activa por
-bloque con `<Media fallback />` — un hero vacío se ve mejor con un hueco, una rejilla de
-tarjetas no. Si quieres el tuyo, pon `media/placeholder.webp` y gana sobre el del kit.
-
-## Estilos
-
-Tres capas, y la frontera importa:
-
-1. **Reset y clases `sq-*` del kit** → `@sumaq/site-kit/tokens.css`. No las redefinas:
-   son las que emiten `Section`, el chrome y los ganchos de los átomos. Las clases de tus
-   secciones son tuyas y no necesitan el prefijo.
-2. **Tokens del sitio** → `:root` en `global.css`. Color, tipografía, espaciado. El kit
-   espera al menos `--color-text`, `--color-bg`, `--color-muted` y `--color-accent`.
-3. **Diseño** → `site.css`, junto con el marcado de `src/sections/`. Cámbialos enteros.
-   Dos sitios que parten de esta plantilla pueden ser irreconocibles entre sí.
-
-Sin Tailwind ni DaisyUI, a propósito.
-
-## Sitios multiidioma
-
-La plantilla es monolingüe (`de`). Ningún cliente ha pedido i18n todavía, así que
-`defineSumaqSite()` no lo expone. Cuando haga falta, el cambio son dos líneas en
-`config.ts` del kit — pero hay que decidir a la vez cómo se traducen `schema/` y `content/`,
-que es la parte cara. Ver la nota en `packages/site-kit/src/config.ts`.
+Van en `media/`, en la raíz, **no en `public/`**: ahí Astro les pone hash de contenido y `srcset`.
+Por eso la cadena `/media/…` del contenido es una clave y no una URL, y se pinta siempre con
+`<Media>` del kit. Los adjuntos que no son imagen van a `public/files/`, que sí conserva la URL.
+El detalle está en el README del kit, § Imágenes.
 
 ## Versiones
 
-`@sumaq/site-kit`, `astro` y `sharp` se fijan en **versión exacta, sin `^`**, y
-`pnpm-lock.yaml` se commitea. Un rango haría que ~100 sitios cambiaran solos en el
-siguiente build; con versión exacta, actualizar es un acto deliberado que la app
-orquesta commit a commit.
-
-`sharp` es `peerDependency` del kit y **dependencia directa de cada sitio**: Astro lo
-resuelve desde la raíz del proyecto que construye, no desde el paquete que lo declara.
+`@sumaq/site-kit`, `astro` y `sharp` se fijan en **versión exacta**, y `pnpm-lock.yaml` se
+commitea: con un rango, todos los sitios cambiarían solos en el siguiente build. `sharp` es
+dependencia directa del sitio porque Astro lo resuelve desde la raíz del proyecto que construye.
 
 ## Despliegue
 
-`pnpm build` genera `dist/`. Quien publica es
-[`.gitea/workflows/deploy.yml`](.gitea/workflows/deploy.yml), que **cada sitio hereda de
-aquí sin tocarlo**: no lleva el dominio ni la URL incrustados, así que el fichero es
-idéntico en los ~100 repos. Lo que cambia son unas variables de Actions, y el nivel al
-que vive cada una dice a qué pertenece el dato:
+Publica [`.gitea/workflows/deploy.yml`](.gitea/workflows/deploy.yml), que cada sitio hereda **sin
+tocarlo**: no lleva el dominio ni la URL incrustados. Lo que cambia de un sitio a otro son
+variables de Actions, y **la única lista completa es la cabecera de ese fichero**, que dice de
+cada una a qué nivel vive (organización o repositorio), quién la escribe y qué pasa si falta.
 
-> 📌 **«~100» es la escala de diseño, no el inventario.** A 22 de septiembre de 2026 hay
-> **3 sitios publicados**; los ~100 son la expectativa del año que viene. Conviene leerlo
-> bien porque invierte la conclusión operativa: un cambio que toca todos los repos `www-*`
-> no es «caro, mejor más adelante», es lo más barato que va a ser nunca. Tres repos hoy;
-> cien y una migración coordinada dentro de un año.
+Lo esencial:
 
-| Variable | Nivel | Lab local | `kallpa-server` |
-| --- | --- | --- | --- |
-| `SITE_DEPLOY_TARGET` | organización | `docroot` — `cp` al docroot que sirve Caddy | `sites` — `rsync` a `/srv/sites/<dominio>/` |
-| `SITE_DOMAIN` | repo | sin valor: se deriva del nombre del repo | el dominio real del sitio, que escribe `sumaq-app` |
-| `SITE_URL` | repo | sin valor: se usa `http://<dominio>.localhost:8080` | la URL pública, que escribe `sumaq-app` |
-| `SITES_HOST` | organización | — | `sites@10.10.0.3` — el servidor que sirve los sitios, por el overlay |
-| `SITES_PORT` | organización | — | el puerto SSH del destino |
-| `SITE_ANALYTICS_KEY` | repo | a mano desde el panel de Ñahui | la `public_key` del sitio, que escribe `sumaq-app` |
-| `SITE_ANALYTICS_ORIGIN` | repo | la Ñahui local (`http://localhost:5188`) | `https://analytics.elingan.dev`, que escribe `sumaq-app` |
+- `SITE_DEPLOY_TARGET` (organización) dice el entorno: `docroot` copia el build al docroot del
+  laboratorio local; `sites` lo sincroniza por `rsync` con el servidor de sitios.
+- `SITE_SLUG` (repositorio) habilita el workflow. Sin ella el job se salta.
+- `SITE_DOMAIN` y `SITE_URL` (repositorio) dicen dónde se publica. Sin `SITE_DOMAIN`, el dominio
+  **se deriva del slug** (el último guion pasa a punto), lo que solo acierta con dominios de dos
+  etiquetas.
+- Las variables de repositorio las escribe `sumaq-app`.
 
-**Las dos de analítica son la excepción interesante a la regla de los niveles.** El origen
-describe el entorno, así que «debería» ser de organización como `SITE_DEPLOY_TARGET` — y lo
-fue hasta el 22 de septiembre de 2026. El problema no era a qué pertenece el dato, sino que
-las dos mitades de una pareja se escribían desde sitios distintos: la clave por API desde
-`sumaq-app`, el origen a mano en la interfaz de Gitea. Ahora las escribe `sumaq-app` en la
-misma operación, y el workflow **aborta** si encuentra clave sin origen: sin las dos el
-layout del kit no emite nada, y publicar sin medir es un fallo que no avisa.
+**Previews públicos.** Mientras un sitio no tiene su dominio activado, `sumaq-app` escribe en
+`SITE_DOMAIN` y `SITE_URL` el host de preview (`<slug>.sumaqsite-preview.eu`); para el workflow es
+un dominio más. Ver `infra-configuration` `amauta/specs/client-sites.md`.
 
-`SITES_HOST` va en la organización y no incrustado en el workflow por un motivo concreto:
-las dos máquinas del par se turnan para sostener la IP pública, y al conmutar hay que
-cambiar **dónde publica el runner**. Con la variable es una línea en un sitio; incrustado
-serían ~100 repos.
-
-El destino es del **entorno**, así que una variable de organización lo describe bien. El
-dominio y la URL son del **sitio**: puestos en la organización le darían a los ~100 repos
-el dominio del primero. Los escribe `sumaq-app` en el repo cuando un admin fija el dominio
-(`setSiteDomainCommand` → `syncSiteDeployVars`), y ahí ganan sobre cualquier valor de la
-organización.
-
-Sin `SITE_DOMAIN` el workflow deriva el dominio del nombre del repo —`www-demo-graz-at` →
-`demo-graz.at`, la misma convención que `local-server/seed.sh`—. Esa derivación es exacta
-para el lab y para cualquier dominio de dos etiquetas, y falsa para un `.co.uk` o un
-subdominio: de ahí que exista la variable. Sin `SITE_URL` el build emitiría
-`https://example.com` en `robots.txt` y en el sitemap; el valor del lab hace que apunten a
-donde el sitio se sirve de verdad.
-
-Va en `.gitea/workflows/` y no en `.github/workflows/` a propósito: el `origin` de esta
-plantilla es GitHub, y allí el workflow intentaría ejecutarse en cada push contra un runner
-que no existe.
-
-Los dos runners responden a la misma label **`sumaq-site`**. No hace falta elegir runner en
-el workflow porque no hay ninguna instancia donde ambos sean candidatos: un repo del Gitea
-local solo puede construir en el runner del lab, y uno de `kallpa-server` solo en el suyo.
+El fichero vive en `.gitea/workflows/` y no en `.github/workflows/` porque el `origin` de la
+plantilla es GitHub, donde no hay runner que lo ejecute.
 
 ## Documentación
 
-- [Kit de átomos](https://github.com/elingan/sumaq-packages) — `amauta/packages/plan-kit-atomos.md` y el README de `packages/site-kit`
-- [Astro](https://docs.astro.build) · [Styling](https://docs.astro.build/en/guides/styling/)
+- Kit de átomos: `sumaq-packages` `packages/site-kit/README.md`.
+- Contrato del contenido: `sumaq-packages` `packages/cms-schema/README.md`.
+- Servidor de sitios, dominios y previews: `infra-configuration` `amauta/specs/client-sites.md`.
+- [Astro](https://docs.astro.build)
